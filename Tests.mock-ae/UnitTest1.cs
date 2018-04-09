@@ -8,7 +8,7 @@ namespace Tests.mock_ae
         [Fact]
         public void Test1()
         {
-
+            Console.WriteLine("Hello world!");
         }
     }
 }

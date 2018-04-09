@@ -6,7 +6,12 @@ namespace Mattersight.mock.ba.ae
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            var ae = new AnalyticEngine();
+            ae.Start();
+
+            Console.ReadKey(true);
+            ae.Stop();
+
         }
     }
 }
