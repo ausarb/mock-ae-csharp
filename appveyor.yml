@@ -10,9 +10,9 @@ install:
     docker version    
 build_script:
 - sh: >-
-    docker build -t ausarb/mock-ae-csharp:latest -f _docker/alpine-x64.Dockerfile .
+    docker build -t matr/mock-ae-csharp:latest -f _docker/alpine-x64.Dockerfile .
 deploy_script:
 - sh: >-
     docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
     
-    docker push ausarb/mock-ae-csharp:latest
+    docker push matr/mock-ae-csharp:latest
