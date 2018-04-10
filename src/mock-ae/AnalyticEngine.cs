@@ -20,7 +20,8 @@ namespace Mattersight.mock.ba.ae
 
                 _worker = Task.Run(() =>
                 {
-                    Console.WriteLine($"{DateTime.Now} - Press any key to terminate.");
+                    var sleepPeriod = TimeSpan.FromSeconds(10);
+                    Console.WriteLine($"{DateTime.Now} - Press any key to terminate.  I'm going to spit out messages every {sleepPeriod.TotalSeconds} seconds.");
                     do
                     {
                         Console.WriteLine($"{DateTime.Now} - Working hard...");
