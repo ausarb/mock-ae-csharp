@@ -1,0 +1,7 @@
+version: 1.0.{build}
+image: Ubuntu
+build_script:
+- sh: >-
+    docker version
+
+    docker build --no-cache -t matr/mock-ae-csharp:latest _docker/alpine-x64
