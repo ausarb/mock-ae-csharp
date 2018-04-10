@@ -1,7 +1,17 @@
 version: 1.0.{build}
 image: Ubuntu
+environment:
+  DOCKER_USER:
+    secure: iWRp0Mn2nb+UizxjgU02/w==
+  DOCKER_PASS:
+    secure: ry77cwLerXuAOhHD4Azlfg==
+install:
+- sh: >-
+    docker version    
 build_script:
 - sh: >-
-    docker version
-
-    docker build -t matr/mock-ae-csharp:latest -f _docker/alpine-x64.Dockerfile .
+    docker build -t ausarb/mock-ae-csharp:latest -f _docker/alpine-x64.Dockerfile .
+deploy_script:
+- sh: >-
+    docker login -u="$env:DOCKER_USER" -p="$env:DOCKER_PASS"
+    docker push ausarb/myfavoriteapp
