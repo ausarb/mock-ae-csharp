@@ -4,7 +4,7 @@ environment:
   DOCKER_USER:
     secure: iWRp0Mn2nb+UizxjgU02/w==
   DOCKER_PASS:
-    secure: ry77cwLerXuAOhHD4Azlfg==
+    secure: FG7GX9pJhL0L9et6XYYH9A4Uu0w6FBjSdPXaTNXTBiM=
     
 for:
 -
@@ -24,7 +24,7 @@ for:
     
 install:
 - sh: docker version    
-- sh: printenv 
+- sh: echo "IMAGE_TAG=$IMAGE_TAG"
 build_script:
 - sh: >-
     docker build -t matr/mock-ae-csharp:$IMAGE_TAG -f _docker/alpine-x64.Dockerfile .
