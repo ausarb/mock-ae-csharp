@@ -25,6 +25,7 @@ for:
 install:
 - sh: >-
     docker version    
+- sh: printenv 
 build_script:
 - sh: >-
     docker build -t matr/mock-ae-csharp:$IMAGE_TAG -f _docker/alpine-x64.Dockerfile .
