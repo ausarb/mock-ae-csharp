@@ -20,11 +20,10 @@ for:
       - master
     
   environment:
-    IMAGE_TAG: "{branch}-latest"
+    IMAGE_TAG: "$Branch_handling-latest"
     
 install:
-- sh: >-
-    docker version    
+- sh: docker version    
 - sh: printenv 
 build_script:
 - sh: >-
