@@ -20,7 +20,7 @@ for:
       - master
     
   environment:
-    IMAGE_TAG: {branch}-latest
+    IMAGE_TAG: "{branch}-latest"
     
 install:
 - sh: >-
