@@ -14,4 +14,5 @@ build_script:
 deploy_script:
 - sh: >-
     docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
+    
     docker push ausarb/mock-ae-csharp:latest
