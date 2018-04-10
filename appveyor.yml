@@ -20,7 +20,7 @@ for:
       - master
     
   environment:
-    IMAGE_TAG: "$Branch_handling-latest"
+    IMAGE_TAG: "$APPVEYOR_REPO_BRANCH-latest"
     
 install:
 - sh: docker version    
