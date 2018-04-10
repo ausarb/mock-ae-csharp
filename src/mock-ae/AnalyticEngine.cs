@@ -22,6 +22,7 @@ namespace Mattersight.mock.ba.ae
 
                 _worker = Task.Run(() =>
                 {
+                    Console.WriteLine("Press any key to terminate.");
                     do
                     {
                         Console.WriteLine($"{DateTime.Now} - Working hard...");
