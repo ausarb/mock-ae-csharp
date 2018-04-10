@@ -22,11 +22,12 @@ namespace Mattersight.mock.ba.ae
 
                 _worker = Task.Run(() =>
                 {
-                    Console.WriteLine("Press any key to terminate.");
+                    Console.WriteLine($"{DateTime.Now} - Press any key to terminate.");
                     do
                     {
                         Console.WriteLine($"{DateTime.Now} - Working hard...");
                     } while (!_ctx.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(10)));
+                    Console.WriteLine($"{DateTime.Now} - Terminating.");
                 }, _ctx.Token);
 
                 return _worker;
