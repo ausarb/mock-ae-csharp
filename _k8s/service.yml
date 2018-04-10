@@ -1,0 +1,16 @@
+# Sevice
+apiVersion: v1
+kind: Service
+metadata:
+  name: mock-ae-csharp
+  labels:
+    app: mock-ae-csharp
+spec:
+  ports:
+  - name: default
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: mock-ae-csharp
+  sessionAffinity: None

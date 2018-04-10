@@ -1,0 +1,50 @@
+# Deployment
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: mock-ae-csharp
+  labels:
+    app: mock-ae-csharp
+  annotations:
+    deployment.kubernetes.io/revision: "1"
+  generation: 1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mock-ae-csharp
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      name: mock-ae-csharp
+      labels:
+        app: mock-ae-csharp
+    spec:
+      containers:
+      - name: mock-ae-csharp
+        image: matr/mock-ae-csharp:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          name: ae
+        volumeMounts:
+          - name: docker
+            mountPath: /var/run/docker.sock
+        resources: {}
+        securityContext:
+          privileged: false
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      volumes:
+       - name: docker
+         hostPath:
+           path: /var/run/docker.sock
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 5
