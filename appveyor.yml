@@ -5,14 +5,31 @@ environment:
     secure: iWRp0Mn2nb+UizxjgU02/w==
   DOCKER_PASS:
     secure: ry77cwLerXuAOhHD4Azlfg==
+    
+for:
+-
+  branches:
+    only:
+      - master
+  
+  environment:
+    IMAGE_TAG: latest
+-
+  branches:
+    except:
+      - master
+    
+  environment:
+    IMAGE_TAG: {branch}-latest
+    
 install:
 - sh: >-
     docker version    
 build_script:
 - sh: >-
-    docker build -t matr/mock-ae-csharp:latest -f _docker/alpine-x64.Dockerfile .
+    docker build -t matr/mock-ae-csharp:$IMAGE_TAG -f _docker/alpine-x64.Dockerfile .
 deploy_script:
 - sh: >-
     docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
     
-    docker push matr/mock-ae-csharp:latest
+    docker push matr/mock-ae-csharp:$IMAGE_TAG
