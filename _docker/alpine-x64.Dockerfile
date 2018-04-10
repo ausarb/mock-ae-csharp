@@ -13,13 +13,6 @@ COPY . .
 WORKDIR /app/src/mock-ae
 RUN dotnet build
 
-
-#Not sure what this is.  Builds an image but then what?
-FROM build AS testrunner
-WORKDIR /app/Tests.mock-ae
-ENTRYPOINT ["dotnet", "test", "--logger:trx"]
-
-
 FROM build AS test
 WORKDIR /app/src/Tests.mock-ae
 RUN dotnet test

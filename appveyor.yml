@@ -4,4 +4,4 @@ build_script:
 - sh: >-
     docker version
 
-    docker build --no-cache -t matr/mock-ae-csharp:latest _docker/alpine-x64
+    docker build -t matr/mock-ae-csharp:latest -f _docker/alpine-x64.Dockerfile .
