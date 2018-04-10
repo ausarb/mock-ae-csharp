@@ -22,7 +22,7 @@ namespace Mattersight.mock.ba.ae
                 {
                     var sleepPeriod = TimeSpan.FromSeconds(10);
                     Console.WriteLine();
-                    Console.WriteLine($"{DateTime.Now} - Matt's favorite number is 50!");
+                    Console.WriteLine($"{DateTime.Now} - Charles's favorite number is 27!");
                     Console.WriteLine($"{DateTime.Now} - Press any key to terminate.  I'm going to spit out messages every {sleepPeriod.TotalSeconds} seconds.");
                     do
                     {
