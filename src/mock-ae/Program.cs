@@ -25,7 +25,7 @@ namespace Mattersight.mock.ba.ae
         public static void Main()
         {
             var ctx = new CancellationTokenSource();
-            var workerTask = new Program("rabbit-mock-ba.minikube.local", 31702).Run(ctx.Token);
+            var workerTask = new Program("rabbit", 5672).Run(ctx.Token);
 
             if (Console.IsInputRedirected)
             {
