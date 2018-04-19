@@ -15,6 +15,8 @@ RUN dotnet build
 
 FROM build AS test
 WORKDIR /app/src/Tests.mock-ae
+ARG RABBIT_HOST_NAME
+ENV RABBIT_HOST_NAME=$RABBIT_HOST_NAME
 RUN dotnet test
 
 

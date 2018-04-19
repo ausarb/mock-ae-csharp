@@ -1,30 +1,71 @@
 ﻿using System;
+using System.Threading;
+using System.Threading.Tasks;
+using Mattersight.mock.ba.ae.Domain.Ti;
+using Mattersight.mock.ba.ae.Domain.Transcription;
+using Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ;
+using Mattersight.mock.ba.ae.Serialization;
+using RabbitMQ.Client;
 
 namespace Mattersight.mock.ba.ae
 {
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
+        private readonly ConnectionFactory _connectionFactory;
+
+        public Program(string rabbitHostName, int rabbitPort = AmqpTcpEndpoint.UseDefaultPort)
         {
-            var ae = new AnalyticEngine();
-            var workerTask = ae.Start();
-
-            TimeSpan timeout;
-
-            try
+            _connectionFactory = new ConnectionFactory
             {
+                HostName = rabbitHostName,
+                Port = rabbitPort
+            };
+        }
+
+        public static void Main()
+        {
+            var ctx = new CancellationTokenSource();
+            var workerTask = new Program("rabbit-mock-ba.minikube.local", 31702).Run(ctx.Token);
+
+            if (Console.IsInputRedirected)
+            {
+                Console.WriteLine($"{DateTime.Now} - No console detected.  I will run for 5 minutes.");
+                ctx.CancelAfter(TimeSpan.FromMinutes(5));
+            }
+            else
+            {
+                Console.WriteLine($"{DateTime.Now} - Press any key to terminate.");
                 Console.ReadKey(true);
-                ae.Stop();
-                timeout = TimeSpan.FromSeconds(30);
+                ctx.Cancel();
             }
-            catch (InvalidOperationException)
+
+            workerTask.Wait(TimeSpan.FromSeconds(30));
+        }
+
+        public Task Run(CancellationToken cancellationToken)
+        {
+            var ctx = new CancellationTokenSource();
+
+            var incomingStream = new ConsumingStream<CallEvent>(new QueueConfiguration {Name="ti"} , _connectionFactory, new ByteArrayEncodedJsonDeserializer<CallEvent>());
+            var outgoingStream = new ProducingStream<CallTranscript>(new QueueConfiguration {Name="transcript"}, _connectionFactory, new CallTranscriptSerializer());
+
+            //Started is when the methods return, not when the tasks from them complete.  
+            //Without the { } inside the Task.Run, it will grab the task returned by these method.  Those won't complete until the program ends.
+            var allStarted = Task
+                .WhenAll(
+                    // ReSharper disable ImplicitlyCapturedClosure
+                    Task.Run(() => { incomingStream.Start(ctx.Token); }, cancellationToken),
+                    Task.Run(() => { outgoingStream.Start(ctx.Token); }, cancellationToken))
+                    // ReSharper restore ImplicitlyCapturedClosure
+                .Wait(TimeSpan.FromMinutes(1));
+
+            if (!allStarted)
             {
-                Console.WriteLine($"{DateTime.Now} - No console detected.  I will run for 1 day.");
-                timeout = TimeSpan.FromDays(1);
+                throw new Exception("At least one stream did not start within 1 minute.");
             }
 
-            workerTask.Wait(timeout);
-
+            var ae = new Ae(incomingStream, outgoingStream);
+            return ae.Start(cancellationToken);
         }
     }
 }

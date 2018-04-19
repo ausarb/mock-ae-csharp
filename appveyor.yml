@@ -22,14 +22,18 @@ for:
   environment:
     IMAGE_TAG: "$APPVEYOR_REPO_BRANCH-latest"
     
-install:
-- sh: docker version    
-- sh: echo "IMAGE_TAG=$IMAGE_TAG"
+before_build: 
+  sh: >-
+    docker network create --driver bridge testing-net
+    
+    docker run --rm -d -p 5672:5672 -p 15672:15672 --name rabbit --network testing-net rabbitmq:3.7.4-management-alpine    
 build_script:
-- sh: >-
-    docker build -t matr/mock-ae-csharp:$IMAGE_TAG -f _docker/alpine-x64.Dockerfile .
+- sh:  >-
+    echo IMAGE_TAG=$IMAGE_TAG
+    
+    docker build --build-arg RABBIT_HOST_NAME=rabbit --network testing-net -t matr/mock-ae-csharp:$IMAGE_TAG -f _docker/alpine-x64.Dockerfile .
 deploy_script:
 - sh: >-
-    docker login -u="$DOCKER_USER" -p="$DOCKER_PASS"
+    docker login -u="$DOCKER_USER" --password-stdin <<<$DOCKER_PASS
     
     docker push matr/mock-ae-csharp:$IMAGE_TAG
