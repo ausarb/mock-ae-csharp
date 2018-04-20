@@ -17,7 +17,7 @@ FROM build AS test
 WORKDIR /app/src/Tests.mock-ae
 ARG RABBIT_HOST_NAME
 ENV RABBIT_HOST_NAME=$RABBIT_HOST_NAME
-RUN dotnet test
+RUN dotnet test --results-directory /results --logger "trx;LogFileName=test_results.xml"
 
 
 FROM build AS publish
@@ -28,4 +28,5 @@ RUN dotnet publish -c Release -o out
 FROM microsoft/dotnet:2.1-runtime-alpine AS runtime
 WORKDIR /app
 COPY --from=publish /app/src/mock-ae/out ./
+COPY --from=test /results ./test_results/
 ENTRYPOINT ["dotnet", "Mattersight.mock.ba.ae.dll"]
