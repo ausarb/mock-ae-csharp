@@ -33,9 +33,7 @@ build_script:
     
     printenv
     
-    #--network-host is so that the building containers can reference this host via "localhost" which is what is in the APPVEYOR_API_URL
-    
-    docker build --network=host --build-arg APPVEYOR_API_URL=$APPVEYOR_API_URL --build-arg RABBIT_HOST_NAME=rabbit --network testing-net -t matr/mock-ae-csharp:$IMAGE_TAG -f _docker/alpine-x64.Dockerfile .
+    docker build --build-arg RABBIT_HOST_NAME=rabbit --network testing-net -t matr/mock-ae-csharp:$IMAGE_TAG -f _docker/alpine-x64.Dockerfile .
     
     mkdir test_results
     
@@ -47,6 +45,10 @@ deploy_script:
     echo "$APPVEYOR_API_URL"
     
     #curl -v -F 'file=test_results/test_results.xml' https://ci.appveyor.com/api/testresults/mstest/$APPVEYOR_JOB_ID
+    
+    testresult
+    
+    curl -v -F 'file=test_results/test_results.xml' $APPVEYOR_API_URL/testresults/mstest/$APPVEYOR_JOB_ID
     
     docker login -u="$DOCKER_USER" --password-stdin <<<$DOCKER_PASS
     
