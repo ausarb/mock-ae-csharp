@@ -1,10 +1,10 @@
 version: 1.0.{build}
 image: Ubuntu
 environment:
-  DOCKER_USER:
-    secure: iWRp0Mn2nb+UizxjgU02/w==
-  DOCKER_PASS:
-    secure: FG7GX9pJhL0L9et6XYYH9A4Uu0w6FBjSdPXaTNXTBiM=
+  #DOCKER_USER:
+  #  secure: iWRp0Mn2nb+UizxjgU02/w==
+  #DOCKER_PASS:
+  #  secure: FG7GX9pJhL0L9et6XYYH9A4Uu0w6FBjSdPXaTNXTBiM=
     
 for:
 -
@@ -31,6 +31,8 @@ build_script:
 - sh:  >-
     echo IMAGE_TAG=$IMAGE_TAG
     
+    printenv
+    
     docker build --build-arg RABBIT_HOST_NAME=rabbit --network testing-net -t matr/mock-ae-csharp:$IMAGE_TAG -f _docker/alpine-x64.Dockerfile .
     
     mkdir test_results
@@ -38,7 +40,9 @@ build_script:
     docker run -v ${PWD}/test_results:/host_test_results --rm --entrypoint cp matr/mock-ae-csharp:$IMAGE_TAG -r test_results/test_results.xml /host_test_results
 deploy_script:
 - sh: >-
-    echo $APPVEYOR_JOB_ID
+    echo "$APPVEYOR_JOB_ID"
+    
+    echo "$APPVEYOR_JOB_ID"
     
     #curl -v -F 'file=test_results/test_results.xml' https://ci.appveyor.com/api/testresults/mstest/$APPVEYOR_JOB_ID
     
