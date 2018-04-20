@@ -38,7 +38,7 @@ build_script:
     docker run -v ${PWD}/test_results:/host_test_results --rm --entrypoint cp matr/mock-ae-csharp:$IMAGE_TAG -r test_results/test_results.xml /host_test_results
 deploy_script:
 - sh: >-
-    curl -F 'file=test_results/test_results.xml' https://ci.appveyor.com/api/testresults/xunit/$APPVEYOR_JOB_ID
+    curl -F 'file=test_results/test_results.xml' https://ci.appveyor.com/api/testresults/mstest/$APPVEYOR_JOB_ID
     
     docker login -u="$DOCKER_USER" --password-stdin <<<$DOCKER_PASS
     
