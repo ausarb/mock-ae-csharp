@@ -42,7 +42,7 @@ deploy_script:
     
     echo "$APPVEYOR_API_URL"
     
-    curl -v -F 'file=test_results/test_results.xml' https://ci.appveyor.com/api/testresults/mstest/$APPVEYOR_JOB_ID
+    curl -v -F 'file=@test_results/test_results.xml' https://ci.appveyor.com/api/testresults/mstest/$APPVEYOR_JOB_ID
     
     #curl -v -F 'file=test_results/test_results.xml' $APPVEYOR_API_URLtestresults/mstest/$APPVEYOR_JOB_ID
     
