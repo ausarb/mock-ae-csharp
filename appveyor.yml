@@ -1,6 +1,6 @@
 version: 1.0.{build}
 image: Ubuntu
-environment:
+#environment:
   #DOCKER_USER:
   #  secure: iWRp0Mn2nb+UizxjgU02/w==
   #DOCKER_PASS:
