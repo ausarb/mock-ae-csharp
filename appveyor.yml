@@ -33,7 +33,7 @@ build_script:
     
     printenv
     
-    docker build --build-arg RABBIT_HOST_NAME=rabbit --network testing-net -t matr/mock-ae-csharp:$IMAGE_TAG -f _docker/alpine-x64.Dockerfile .
+    docker build --build-arg APPVEYOR_API_URL=$APPVEYOR_API_URL --build-arg RABBIT_HOST_NAME=rabbit --network testing-net -t matr/mock-ae-csharp:$IMAGE_TAG -f _docker/alpine-x64.Dockerfile .
     
     mkdir test_results
     
@@ -42,7 +42,7 @@ deploy_script:
 - sh: >-
     echo "$APPVEYOR_JOB_ID"
     
-    echo "$APPVEYOR_JOB_ID"
+    echo "$APPVEYOR_API_URL"
     
     #curl -v -F 'file=test_results/test_results.xml' https://ci.appveyor.com/api/testresults/mstest/$APPVEYOR_JOB_ID
     

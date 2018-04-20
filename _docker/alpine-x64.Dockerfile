@@ -17,6 +17,9 @@ FROM build AS test
 WORKDIR /app/src/Tests.mock-ae
 ARG RABBIT_HOST_NAME
 ENV RABBIT_HOST_NAME=$RABBIT_HOST_NAME
+
+ARG APPVEYOR_API_URL
+ENV APPVEYOR_API_URL=$APPVEYOR_API_URL
 RUN dotnet test --results-directory /results --logger "Appveyor;LogFileName=test_results.xml"
 
 
