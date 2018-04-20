@@ -40,7 +40,7 @@ deploy_script:
 - sh: >-
     echo $APPVEYOR_JOB_ID
     
-    curl -v -F 'file=test_results/test_results.xml' https://ci.appveyor.com/api/testresults/mstest/$APPVEYOR_JOB_ID
+    #curl -v -F 'file=test_results/test_results.xml' https://ci.appveyor.com/api/testresults/mstest/$APPVEYOR_JOB_ID
     
     docker login -u="$DOCKER_USER" --password-stdin <<<$DOCKER_PASS
     

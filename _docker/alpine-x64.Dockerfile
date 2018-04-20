@@ -17,7 +17,7 @@ FROM build AS test
 WORKDIR /app/src/Tests.mock-ae
 ARG RABBIT_HOST_NAME
 ENV RABBIT_HOST_NAME=$RABBIT_HOST_NAME
-RUN dotnet test --results-directory /results --logger "trx;LogFileName=test_results.xml"
+RUN dotnet test --results-directory /results --logger "Appveyor;LogFileName=test_results.xml"
 
 
 FROM build AS publish
