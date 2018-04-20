@@ -65,7 +65,7 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             var transcripts = new List<CallTranscript>();
 
             var tiCallIds = new List<string>();
-            for (var i = 0; i < 100; i++)
+            for (var i = 0; i < 10; i++)
             {
                 tiCallIds.Add(Guid.NewGuid().ToString());
             }
