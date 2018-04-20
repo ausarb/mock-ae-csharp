@@ -33,7 +33,9 @@ build_script:
     
     printenv
     
-    docker build --build-arg APPVEYOR_API_URL=$APPVEYOR_API_URL --build-arg RABBIT_HOST_NAME=rabbit --network testing-net -t matr/mock-ae-csharp:$IMAGE_TAG -f _docker/alpine-x64.Dockerfile .
+    #--network-host is so that the building containers can reference this host via "localhost" which is what is in the APPVEYOR_API_URL
+    
+    docker build --network=host --build-arg APPVEYOR_API_URL=$APPVEYOR_API_URL --build-arg RABBIT_HOST_NAME=rabbit --network testing-net -t matr/mock-ae-csharp:$IMAGE_TAG -f _docker/alpine-x64.Dockerfile .
     
     mkdir test_results
     
