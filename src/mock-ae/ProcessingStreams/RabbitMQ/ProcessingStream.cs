@@ -47,8 +47,6 @@ namespace Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ
                             exclusive: false,
                             autoDelete: QueueConfiguration.AutoDelete);
 
-                        //I (Greg Biles) *think* that this is only used by the consumer....
-                        Channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
                         initializationComplete.Set();
 
                         token.WaitHandle.WaitOne();

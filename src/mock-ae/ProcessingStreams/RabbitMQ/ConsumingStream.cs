@@ -18,6 +18,8 @@ namespace Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ
         {
             //We need to be able to inject this and the channel
             var consumer = new EventingBasicConsumer(Channel);
+
+            Channel.BasicQos(prefetchSize: 0, prefetchCount: 100, global: false);
             consumer.Received += (model, eventArgs) =>
             {
                 try
