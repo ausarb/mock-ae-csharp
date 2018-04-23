@@ -47,6 +47,7 @@ namespace Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ
                             exclusive: false,
                             autoDelete: QueueConfiguration.AutoDelete);
 
+                        Channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
                         initializationComplete.Set();
 
                         token.WaitHandle.WaitOne();
