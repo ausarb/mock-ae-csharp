@@ -42,4 +42,4 @@ deploy_script:
     
     docker login -u="$DOCKER_USER" --password-stdin <<<$DOCKER_PASS
     
-    docker push matr/mock-ae-csharp:$IMAGE_TAG
+    docker push matr/mock-ae-csharp
