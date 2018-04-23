@@ -29,8 +29,8 @@ namespace Mattersight.mock.ba.ae
 
             if (Console.IsInputRedirected)
             {
-                Console.WriteLine($"{DateTime.Now} - No console detected.  I will run for 5 minutes.");
-                ctx.CancelAfter(TimeSpan.FromMinutes(5));
+                Console.WriteLine($"{DateTime.Now} - No console detected.  I will run forever.");
+                workerTask.Wait(ctx.Token);  //Just wait forever.
             }
             else
             {
