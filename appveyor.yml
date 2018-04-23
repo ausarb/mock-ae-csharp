@@ -31,14 +31,14 @@ build_script:
 - sh:  >-
     echo IMAGE_TAG=$IMAGE_TAG
     
-    docker build --build-arg RABBIT_HOST_NAME=rabbit --network testing-net -t matr/mock-ae-csharp:$IMAGE_TAG -f _docker/alpine-x64.Dockerfile .
+    docker build --build-arg RABBIT_HOST_NAME=rabbit --network testing-net -t matr/mock-ae-csharp:$APPVEYOR_BUILD_VERSION -t matr/mock-ae-csharp:$IMAGE_TAG -f _docker/alpine-x64.Dockerfile .
 deploy_script:
 - sh: >-
     mkdir test_results
     
     docker run -v ${PWD}/test_results:/host_test_results --rm --entrypoint cp matr/mock-ae-csharp:$IMAGE_TAG -r test_results/test_results.xml /host_test_results
     
-    curl -v -F 'file=@test_results/test_results.xml' https://ci.appveyor.com/api/testresults/mstest/$APPVEYOR_JOB_ID
+    curl -F 'file=@test_results/test_results.xml' https://ci.appveyor.com/api/testresults/mstest/$APPVEYOR_JOB_ID
     
     docker login -u="$DOCKER_USER" --password-stdin <<<$DOCKER_PASS
     
