@@ -31,7 +31,7 @@ build_script:
 - sh:  >-
     echo IMAGE_TAG=$IMAGE_TAG
     
-    docker build --build-arg $APPVEYOR_BUILD_VERSION --build-arg RABBIT_HOST_NAME=rabbit --network testing-net -t matr/mock-ae-csharp:$APPVEYOR_BUILD_VERSION -t matr/mock-ae-csharp:$IMAGE_TAG -f _docker/alpine-x64.Dockerfile .
+    docker build --build-arg version=$APPVEYOR_BUILD_VERSION --build-arg RABBIT_HOST_NAME=rabbit --network testing-net -t matr/mock-ae-csharp:$APPVEYOR_BUILD_VERSION -t matr/mock-ae-csharp:$IMAGE_TAG -f _docker/alpine-x64.Dockerfile .
 deploy_script:
 - sh: >-
     mkdir test_results
