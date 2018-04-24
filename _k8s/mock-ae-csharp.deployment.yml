@@ -10,6 +10,7 @@ metadata:
   generation: 1
 spec:
   replicas: 1
+  revisionHistoryLimit: 1
   selector:
     matchLabels:
       app: mock-ae-csharp
@@ -23,17 +24,32 @@ spec:
       name: mock-ae-csharp
       labels:
         app: mock-ae-csharp
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9143"
+        prometheus.io/interval: 5s
     spec:
       containers:
       - name: mock-ae-csharp
-        image: matr/mock-ae-csharp:latest
-        imagePullPolicy: Always
+        image: matr/mock-ae-csharp:1.0.112
+#        imagePullPolicy: Always
+#        command: ["/bin/bash", "-c"]
+#        args:
+#        - |
+#          while true
+#          do
+#            sleep 30
+#          done
         ports:
         - containerPort: 80
           name: ae
+        #- containerPort: 9143
+#          name: monitor
         volumeMounts:
           - name: docker
             mountPath: /var/run/docker.sock
+#          - name: code
+#            mountPath: /usr/src/apps/mock-ae-csharp
         resources: {}
         securityContext:
           privileged: false
@@ -43,6 +59,9 @@ spec:
        - name: docker
          hostPath:
            path: /var/run/docker.sock
+#       - name: code
+#         hostPath:
+#           path: /development/github/kubernetes/mock-ae-csharp
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
