@@ -11,8 +11,8 @@ RUN dotnet restore
 # copy everything else and build app
 COPY . .
 WORKDIR /app/src/mock-ae
-ARG VERSION=$VERSION
-ENV VERSION
+ARG VERSION
+ENV VERSION=$VERSION
 RUN dotnet build /property:Version=$VERSION
 
 FROM build AS test
