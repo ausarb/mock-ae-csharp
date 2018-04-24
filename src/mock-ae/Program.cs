@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Mattersight.mock.ba.ae.Domain.Ti;
@@ -24,6 +25,8 @@ namespace Mattersight.mock.ba.ae
 
         public static void Main()
         {
+            Console.WriteLine($"Version = v{Assembly.GetExecutingAssembly().GetName().Version}.");
+
             var ctx = new CancellationTokenSource();
             var workerTask = new Program("rabbit", 5672).Run(ctx.Token);
 

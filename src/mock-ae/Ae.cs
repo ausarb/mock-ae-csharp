@@ -23,6 +23,7 @@ namespace Mattersight.mock.ba.ae
 
         public Task Start(CancellationToken cancellationToken)
         {
+            var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
             lock (this)
             {
                 if (_worker != null)
@@ -39,7 +40,7 @@ namespace Mattersight.mock.ba.ae
                     var tiConsumer = new TiConsumer(_incomingCallEventStream, _outgoingTranscriptionStream);
                     do
                     {
-                        Console.WriteLine($"{DateTime.Now} - Working hard...");
+                        Console.WriteLine($"{DateTime.Now} - Working hard...  v{version}.");
                     } while (!cancellationToken.WaitHandle.WaitOne(TimeSpan.FromSeconds(10)));
 
                     Console.WriteLine($"{DateTime.Now} - Terminating.");
