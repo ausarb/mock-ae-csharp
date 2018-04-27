@@ -14,13 +14,11 @@ namespace Mattersight.mock.ba.ae.Tests.ProcessingStreams.RabbitMQ.ConsumingStrea
     public class FailingSubscriber
     {
         [Scenario]
-        public void When_subscribers_event_proccesing_throws_an_exception(ConsumingStream<object> sut, IBasicConsumer consumer, Mock<IModel> channel)
+        public void When_subscribers_event_proccesing_throws_an_exception(ConsumingStream<object> sut, IBasicConsumer consumer, Mock<IModel> channel, ulong deliveryTag = 1234)
         {
             var ctx = new CancellationTokenSource();
             try
             {
-                var deliveryTag = (ulong)1234;
-
                 "Given a consuming stream".x(() =>
                 {
                     channel = new Mock<IModel>();
