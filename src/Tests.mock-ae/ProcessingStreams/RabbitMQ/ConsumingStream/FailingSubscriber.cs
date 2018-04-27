@@ -9,7 +9,7 @@ using Xbehave;
 
 // ReSharper disable ImplicitlyCapturedClosure
 
-namespace Mattersight.mock.ba.ae.Tests.ProcessingStreams.RabbitMQ.ConsumingStreamSpecs
+namespace Mattersight.mock.ba.ae.Tests.ProcessingStreams.RabbitMQ.ConsumingStream
 {
     public class FailingSubscriber
     {

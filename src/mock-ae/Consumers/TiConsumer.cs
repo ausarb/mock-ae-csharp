@@ -28,12 +28,12 @@ namespace Mattersight.mock.ba.ae.Consumers
 
             Console.WriteLine("Creating a transcript.");
 
+            var mediumId = MediumId.Next();
             var transcript = new CallTranscript
             {
-                Call = new Call(callEvent.AcdEvent.CallId, MediumId.Next()),
-                Transcript = new Transcript("random transcript")
+                Call = new Call(callEvent.AcdEvent.CallId, mediumId),
+                Transcript = new Transcript($"random transcript for call with MediumId of {mediumId.Value}.")
             };
-
 
             // The stream must know how to serialze the transcript (via dependency injection), not *this* class.  
             // This allows multiple producers to write to the same stream.

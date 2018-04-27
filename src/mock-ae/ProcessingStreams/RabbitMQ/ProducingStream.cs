@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Mattersight.mock.ba.ae.Serialization;
 using RabbitMQ.Client;
 
@@ -34,6 +33,7 @@ namespace Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ
                 Channel.BasicPublish(
                     exchange: "",
                     routingKey: QueueConfiguration.Name,
+                    mandatory: false,
                     basicProperties: _channelProperties.Value,
                     body: serializedMessage);
             }

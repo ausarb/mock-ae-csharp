@@ -5,13 +5,13 @@ using RabbitMQ.Client;
 
 namespace Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ
 {
-    public class ProcessingStream : IProcessingStream
+    public abstract class ProcessingStream : IProcessingStream
     {
         protected IModel Channel;
         protected readonly QueueConfiguration QueueConfiguration;
         private readonly IConnectionFactory _connectionFactory;
 
-        public ProcessingStream(QueueConfiguration queueConfiguration, IConnectionFactory connectionFactory)
+        protected ProcessingStream(QueueConfiguration queueConfiguration, IConnectionFactory connectionFactory)
         {
             QueueConfiguration = queueConfiguration;
             _connectionFactory = connectionFactory;
