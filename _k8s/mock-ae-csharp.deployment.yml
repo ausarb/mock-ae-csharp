@@ -31,7 +31,7 @@ spec:
     spec:
       containers:
       - name: mock-ae-csharp
-        image: matr/mock-ae-csharp:1.0.112
+        image: matr/mock-ae-csharp:1.0.115
 #        imagePullPolicy: Always
 #        command: ["/bin/bash", "-c"]
 #        args:
