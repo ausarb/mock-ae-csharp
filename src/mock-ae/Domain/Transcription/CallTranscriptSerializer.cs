@@ -10,7 +10,7 @@ namespace Mattersight.mock.ba.ae.Domain.Transcription
         {
             var json = JsonConvert.SerializeObject(new
             {
-                callId = transcript.Call.TiCallId,
+                callId = transcript.Call.CallMetaData.TiCallId,
                 mediumId = transcript.Call.MediumId.Value,
                 transcript = string.Join(' ', transcript.Transcript.Words)
             });

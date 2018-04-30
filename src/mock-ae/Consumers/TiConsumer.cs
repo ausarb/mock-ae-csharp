@@ -1,5 +1,6 @@
 ﻿using System;
 using Mattersight.mock.ba.ae.Domain;
+using Mattersight.mock.ba.ae.Domain.Calls;
 using Mattersight.mock.ba.ae.Domain.Ti;
 using Mattersight.mock.ba.ae.Domain.Transcription;
 using Mattersight.mock.ba.ae.ProcessingStreams;
@@ -31,7 +32,10 @@ namespace Mattersight.mock.ba.ae.Consumers
             var mediumId = MediumId.Next();
             var transcript = new CallTranscript
             {
-                Call = new Call(callEvent.AcdEvent.CallId, mediumId),
+                Call = new Call(mediumId)
+                {
+                    CallMetaData = new CallMetaData { TiCallId = callEvent.AcdEvent.CallId }
+                },
                 Transcript = new Transcript($"random transcript for call with MediumId of {mediumId.Value}.")
             };
 

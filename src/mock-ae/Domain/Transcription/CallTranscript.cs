@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Mattersight.mock.ba.ae.Domain.Calls;
 
 namespace Mattersight.mock.ba.ae.Domain.Transcription
 {

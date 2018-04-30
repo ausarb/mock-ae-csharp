@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Mattersight.mock.ba.ae.Domain;
+using Mattersight.mock.ba.ae.Domain.Calls;
 using Mattersight.mock.ba.ae.Domain.Transcription;
 using Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ;
 using Mattersight.mock.ba.ae.Serialization;
@@ -109,7 +110,7 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             // We issued two events per call.  We should only have one transcript per tiCallIds though.
             transcripts.Count.ShouldBe(tiCallIds.Count, "There weren't as many transcriptions published as expected.");
 
-            tiCallIds.ForEach(callId => transcripts.Count(x => x.Call.TiCallId == callId).ShouldBe(1, $"Unexpected number of transcripts found for {callId}."));
+            tiCallIds.ForEach(callId => transcripts.Count(x => x.Call.CallMetaData.TiCallId == callId).ShouldBe(1, $"Unexpected number of transcripts found for {callId}."));
         }
 
         private class CallTranscriptDeserializer : IDeserializer<byte[], CallTranscript>
@@ -121,7 +122,7 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
                 var temp = JsonConvert.DeserializeAnonymousType(json, definition);
                 return new CallTranscript
                 {
-                    Call = new Call(temp.CallId, new MediumId(temp.MediumId)),
+                    Call = new Call(new MediumId(temp.MediumId)) {CallMetaData = new CallMetaData { TiCallId = temp.CallId }},
                     Transcript = new Transcript(temp.Transcript)
                 };
             }
