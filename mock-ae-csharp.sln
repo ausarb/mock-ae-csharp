@@ -7,6 +7,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "mock-ae", "src\mock-ae\mock
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests.mock-ae", "src\Tests.mock-ae\Tests.mock-ae.csproj", "{AA38ED02-57F1-4FED-97CA-5E569CB76941}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mock-ae-csharp.Grains", "mock-ae-csharp.Grains\mock-ae-csharp.Grains.csproj", "{7110D70C-E416-4285-B0BD-06A5372E38F3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mock-ae-csharp.Interfaces", "mock-ae-csharp.Interfaces\mock-ae-csharp.Interfaces.csproj", "{CE1ADA2B-3FFC-4B19-9301-DBDA89CE35B6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{AA38ED02-57F1-4FED-97CA-5E569CB76941}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AA38ED02-57F1-4FED-97CA-5E569CB76941}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AA38ED02-57F1-4FED-97CA-5E569CB76941}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7110D70C-E416-4285-B0BD-06A5372E38F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7110D70C-E416-4285-B0BD-06A5372E38F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7110D70C-E416-4285-B0BD-06A5372E38F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7110D70C-E416-4285-B0BD-06A5372E38F3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CE1ADA2B-3FFC-4B19-9301-DBDA89CE35B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CE1ADA2B-3FFC-4B19-9301-DBDA89CE35B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CE1ADA2B-3FFC-4B19-9301-DBDA89CE35B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CE1ADA2B-3FFC-4B19-9301-DBDA89CE35B6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,6 +7,9 @@ using Mattersight.mock.ba.ae.Domain.Ti;
 using Mattersight.mock.ba.ae.Domain.Transcription;
 using Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ;
 using Mattersight.mock.ba.ae.Serialization;
+using Microsoft.Extensions.Logging;
+using Orleans.Configuration;
+using Orleans.Hosting;
 using RabbitMQ.Client;
 
 namespace Mattersight.mock.ba.ae
@@ -23,26 +27,43 @@ namespace Mattersight.mock.ba.ae
             };
         }
 
-        public static void Main()
+        public static async Task Main()
         {
             Console.WriteLine($"Version = v{Assembly.GetExecutingAssembly().GetName().Version}.");
 
-            var ctx = new CancellationTokenSource();
-            var workerTask = new Program("rabbit", 5672).Run(ctx.Token);
+            var siloBuilder = new SiloHostBuilder()
+                .UseLocalhostClustering()
+                .Configure<ClusterOptions>(x =>
+                {
+                    x.ClusterId = "dev";
+                    x.ServiceId = "mock-ae-csharp";
+                })
+                .Configure<EndpointOptions>(x =>
+                {
+                    x.AdvertisedIPAddress = IPAddress.Loopback;
+                })
+                .ConfigureLogging(x => x.AddConsole());
 
-            if (Console.IsInputRedirected)
+            using (var silo = siloBuilder.Build())
             {
-                Console.WriteLine($"{DateTime.Now} - No console detected.  I will run forever.");
-                workerTask.Wait(ctx.Token);  //Just wait forever.
-            }
-            else
-            {
-                Console.WriteLine($"{DateTime.Now} - Press any key to terminate.");
-                Console.ReadKey(true);
-                ctx.Cancel();
-            }
+                await silo.StartAsync();
+                var ctx = new CancellationTokenSource();
+                var workerTask = new Program("rabbit", 5672).Run(ctx.Token);
 
-            workerTask.Wait(TimeSpan.FromSeconds(30));
+                if (Console.IsInputRedirected)
+                {
+                    Console.WriteLine($"{DateTime.Now} - No console detected.  I will run forever.");
+                    workerTask.Wait(ctx.Token); //Just wait forever.
+                }
+                else
+                {
+                    Console.WriteLine($"{DateTime.Now} - Press any key to terminate.");
+                    Console.ReadKey(true);
+                    ctx.Cancel();
+                }
+
+                workerTask.Wait(TimeSpan.FromSeconds(30));
+            }
         }
 
         public Task Run(CancellationToken cancellationToken)
