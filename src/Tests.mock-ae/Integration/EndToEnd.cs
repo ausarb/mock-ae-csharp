@@ -85,9 +85,7 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             var serviceId = "unittests";
             using (var silo = new LocalhostSiloBuilder(clusterId, serviceId).Build())
             {
-                Console.WriteLine("Starting Silo");
                 silo.StartAsync().Wait();
-                Console.WriteLine("Silo started");
 
                 var ctx = new CancellationTokenSource();
                 var sut = new Program(new ClusterClientFactory(clusterId, serviceId).CreateOrleansClient().Result, connectionFactory.HostName, connectionFactory.Port);
