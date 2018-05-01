@@ -3,14 +3,13 @@ using System.Net;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Mattersight.mock.ae.csharp.Interfaces;
 using Mattersight.mock.ba.ae.Domain.Ti;
 using Mattersight.mock.ba.ae.Domain.Transcription;
 using Mattersight.mock.ba.ae.Orleans;
 using Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ;
 using Mattersight.mock.ba.ae.Serialization;
-using Microsoft.Extensions.Logging;
 using Orleans;
-using Orleans.Configuration;
 using Orleans.Hosting;
 using RabbitMQ.Client;
 
@@ -38,24 +37,15 @@ namespace Mattersight.mock.ba.ae
         {
             Console.WriteLine($"Version = v{Assembly.GetExecutingAssembly().GetName().Version}.");
 
-            var siloBuilder = new SiloHostBuilder()
-                .UseLocalhostClustering()
-                .Configure<ClusterOptions>(x =>
-                {
-                    x.ClusterId = OrleansClusterId;
-                    x.ServiceId = OrleansServiceId;
-                })
-                .Configure<EndpointOptions>(x =>
-                {
-                    x.AdvertisedIPAddress = IPAddress.Loopback;
-                })
-                .ConfigureLogging(x => x.AddConsole());
+            var siloBuilder = new LocalhostSiloBuilder(OrleansClusterId, OrleansServiceId)
+                .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName)
+                .AddMemoryGrainStorage("PubSubStore");
 
             using (var silo = siloBuilder.Build())
             {
                 silo.StartAsync().Wait();
 
-                var orleansClient = new ClusterClientFactory(OrleansClusterId, OrleansServiceId).CreateOrleansClient().Result;
+                var orleansClient = new ClusterClientFactory(OrleansClusterId, OrleansServiceId, Configuration.OrleansStreamProviderName).CreateOrleansClient().Result;
                 Console.WriteLine($"oreansClient created.  IsInitialized={orleansClient.IsInitialized}");
 
                 var ctx = new CancellationTokenSource();

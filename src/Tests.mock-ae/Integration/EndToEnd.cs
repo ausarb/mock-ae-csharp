@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using Mattersight.mock.ae.csharp.Interfaces;
 using Mattersight.mock.ba.ae.Domain;
 using Mattersight.mock.ba.ae.Domain.Calls;
 using Mattersight.mock.ba.ae.Domain.Transcription;
@@ -88,7 +89,7 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
                 silo.StartAsync().Wait();
 
                 var ctx = new CancellationTokenSource();
-                var sut = new Program(new ClusterClientFactory(clusterId, serviceId).CreateOrleansClient().Result, connectionFactory.HostName, connectionFactory.Port);
+                var sut = new Program(new ClusterClientFactory(clusterId, serviceId, Configuration.OrleansStreamProviderName).CreateOrleansClient().Result, connectionFactory.HostName, connectionFactory.Port);
 
                 _output.WriteLine("Starting the \"application\".");
                 var wokerTask = sut.Run(ctx.Token);

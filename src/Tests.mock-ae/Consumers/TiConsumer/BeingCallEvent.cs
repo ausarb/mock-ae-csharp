@@ -3,6 +3,7 @@ using Mattersight.mock.ba.ae.Domain.Ti;
 using Mattersight.mock.ba.ae.Domain.Transcription;
 using Mattersight.mock.ba.ae.ProcessingStreams;
 using Moq;
+using Orleans;
 using Shouldly;
 using Xbehave;
 using It = Moq.It;
@@ -23,7 +24,7 @@ namespace Mattersight.mock.ba.ae.Tests.Consumers.TiConsumer
 
                 outgoingStream = new Mock<IProducingStream<CallTranscript>>();
 
-                sut = new ae.Consumers.TiConsumer(incomingStream.Object, outgoingStream.Object);
+                sut = new ae.Consumers.TiConsumer(Mock.Of<IClusterClient>(), incomingStream.Object, outgoingStream.Object);
 
                 // sanity check
                 onEventReceived.ShouldNotBeNull($"{sut.GetType()}.Start() should have registered something with the Subscribe method.");

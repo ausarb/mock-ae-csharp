@@ -5,32 +5,25 @@ using Orleans.Hosting;
 
 namespace Mattersight.mock.ba.ae.Orleans
 {
-    public class LocalhostSiloBuilder : ISoloBuilder
+    /// <summary>
+    /// Convenience class that sets up a localhost (dev) cluster listening on "localhost" and logs to the console. 
+    /// </summary>
+    public class LocalhostSiloBuilder : SiloHostBuilder
     {
-        private readonly string _clusterId, _serviceId;
-
         public LocalhostSiloBuilder(string clusterId, string serviceId)
         {
-            _clusterId = clusterId;
-            _serviceId = serviceId;
-        }
-
-        public ISiloHost Build()
-        {
-            var siloBuilder = new SiloHostBuilder()
+            this
                 .UseLocalhostClustering()
                 .Configure<ClusterOptions>(x =>
                 {
-                    x.ClusterId = _clusterId;
-                    x.ServiceId = _serviceId;
+                    x.ClusterId = clusterId;
+                    x.ServiceId = serviceId;
                 })
                 .Configure<EndpointOptions>(x =>
                 {
                     x.AdvertisedIPAddress = IPAddress.Loopback;
                 })
                 .ConfigureLogging(x => x.AddConsole());
-
-            return siloBuilder.Build();
         }
     }
 }
