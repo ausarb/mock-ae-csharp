@@ -5,6 +5,7 @@ using Mattersight.mock.ba.ae.Consumers;
 using Mattersight.mock.ba.ae.Domain.Ti;
 using Mattersight.mock.ba.ae.Domain.Transcription;
 using Mattersight.mock.ba.ae.ProcessingStreams;
+using Orleans;
 
 namespace Mattersight.mock.ba.ae
 {
@@ -12,11 +13,13 @@ namespace Mattersight.mock.ba.ae
     {
         private Task _worker;
 
+        private readonly IClusterClient _orleansClient;
         private readonly IConsumingStream<CallEvent> _incomingCallEventStream;
         private readonly IProducingStream<CallTranscript> _outgoingTranscriptionStream;
 
-        public Ae(IConsumingStream<CallEvent> incomingCallEventStream, IProducingStream<CallTranscript> outgoingTranscriptionStream)
+        public Ae(IClusterClient orleansClient, IConsumingStream<CallEvent> incomingCallEventStream, IProducingStream<CallTranscript> outgoingTranscriptionStream)
         {
+            _orleansClient = orleansClient;
             _incomingCallEventStream = incomingCallEventStream;
             _outgoingTranscriptionStream = outgoingTranscriptionStream;
         }

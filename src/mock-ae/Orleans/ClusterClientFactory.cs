@@ -6,16 +6,24 @@ using Orleans.Configuration;
 
 namespace Mattersight.mock.ba.ae.Orleans
 {
-    class OrleansClientFactory
+    public class ClusterClientFactory : IClusterClientFactory
     {
-        public async Task<IClusterClient> CreateOrleansClient(string clusterId, string serviceId)
+        private readonly string _clusterId, _serviceId;
+
+        public ClusterClientFactory(string clusterId, string serviceId)
+        {
+            _clusterId = clusterId;
+            _serviceId = serviceId;
+        }
+
+        public async Task<IClusterClient> CreateOrleansClient()
         {
             var clientBuilder = new ClientBuilder()
                 .UseLocalhostClustering()
-                .Configure<ClusterOptions>(options =>
+                .Configure<ClusterOptions>(x =>
                 {
-                    options.ClusterId = clusterId;
-                    options.ServiceId = serviceId;
+                    x.ClusterId = _clusterId;
+                    x.ServiceId = _serviceId;
                 })
                 .ConfigureLogging(logging => logging.AddConsole());
 

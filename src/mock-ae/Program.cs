@@ -9,6 +9,7 @@ using Mattersight.mock.ba.ae.Orleans;
 using Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ;
 using Mattersight.mock.ba.ae.Serialization;
 using Microsoft.Extensions.Logging;
+using Orleans;
 using Orleans.Configuration;
 using Orleans.Hosting;
 using RabbitMQ.Client;
@@ -18,12 +19,14 @@ namespace Mattersight.mock.ba.ae
     public class Program
     {
         private readonly ConnectionFactory _connectionFactory;
+        private readonly IClusterClient _orleansClient;
 
         private const string OrleansClusterId = "dev";
         private const string OrleansServiceId = "mock-ae-csharp";
 
-        public Program(string rabbitHostName, int rabbitPort = AmqpTcpEndpoint.UseDefaultPort)
+        public Program(IClusterClient orleansClient, string rabbitHostName, int rabbitPort = AmqpTcpEndpoint.UseDefaultPort)
         {
+            _orleansClient = orleansClient;
             _connectionFactory = new ConnectionFactory
             {
                 HostName = rabbitHostName,
@@ -52,25 +55,16 @@ namespace Mattersight.mock.ba.ae
             {
                 silo.StartAsync().Wait();
 
-                var orleansClient = new OrleansClientFactory().CreateOrleansClient(OrleansClusterId, OrleansServiceId).Result;
+                var orleansClient = new ClusterClientFactory(OrleansClusterId, OrleansServiceId).CreateOrleansClient().Result;
                 Console.WriteLine($"oreansClient created.  IsInitialized={orleansClient.IsInitialized}");
 
                 var ctx = new CancellationTokenSource();
-                var workerTask = new Program("rabbit", 5672).Run(ctx.Token);
 
-                if (Console.IsInputRedirected)
-                {
-                    Console.WriteLine($"{DateTime.Now} - No console detected.  I will run forever.");
-                    workerTask.Wait(ctx.Token); //Just wait forever.
-                }
-                else
-                {
-                    Console.WriteLine($"{DateTime.Now} - Press any key to terminate.");
-                    Console.ReadKey(true);
-                    ctx.Cancel();
-                }
+                //If StdIn is redirected, assume we're running in a container and use "rabbit" for the hostname, otherwise the local box, which would be dev's laptop.
+                var rabbitHostName = Console.IsInputRedirected ? "rabbit" : IPAddress.Loopback.ToString();
 
-                workerTask.Wait(TimeSpan.FromSeconds(30));
+                var workerTask = new Program(orleansClient, rabbitHostName, 5672).Run(ctx.Token);
+                workerTask.Wait(ctx.Token); //Just wait forever.
             }
         }
 
@@ -96,7 +90,8 @@ namespace Mattersight.mock.ba.ae
                 throw new Exception("At least one stream did not start within 1 minute.");
             }
 
-            var ae = new Ae(incomingStream, outgoingStream);
+            // AE is what knows what to do with these streams.  Just start them and pass them to AE.
+            var ae = new Ae(_orleansClient, incomingStream, outgoingStream);
             return ae.Start(cancellationToken);
         }
     }
