@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Mattersight.mock.ba.ae.Domain.Ti;
 using Mattersight.mock.ba.ae.Domain.Transcription;
+using Mattersight.mock.ba.ae.Orleans;
 using Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ;
 using Mattersight.mock.ba.ae.Serialization;
 using Microsoft.Extensions.Logging;
@@ -18,6 +19,9 @@ namespace Mattersight.mock.ba.ae
     {
         private readonly ConnectionFactory _connectionFactory;
 
+        private const string OrleansClusterId = "dev";
+        private const string OrleansServiceId = "mock-ae-csharp";
+
         public Program(string rabbitHostName, int rabbitPort = AmqpTcpEndpoint.UseDefaultPort)
         {
             _connectionFactory = new ConnectionFactory
@@ -27,7 +31,7 @@ namespace Mattersight.mock.ba.ae
             };
         }
 
-        public static async Task Main()
+        public static void Main()
         {
             Console.WriteLine($"Version = v{Assembly.GetExecutingAssembly().GetName().Version}.");
 
@@ -35,8 +39,8 @@ namespace Mattersight.mock.ba.ae
                 .UseLocalhostClustering()
                 .Configure<ClusterOptions>(x =>
                 {
-                    x.ClusterId = "dev";
-                    x.ServiceId = "mock-ae-csharp";
+                    x.ClusterId = OrleansClusterId;
+                    x.ServiceId = OrleansServiceId;
                 })
                 .Configure<EndpointOptions>(x =>
                 {
@@ -46,7 +50,11 @@ namespace Mattersight.mock.ba.ae
 
             using (var silo = siloBuilder.Build())
             {
-                await silo.StartAsync();
+                silo.StartAsync().Wait();
+
+                var orleansClient = new OrleansClientFactory().CreateOrleansClient(OrleansClusterId, OrleansServiceId).Result;
+                Console.WriteLine($"oreansClient created.  IsInitialized={orleansClient.IsInitialized}");
+
                 var ctx = new CancellationTokenSource();
                 var workerTask = new Program("rabbit", 5672).Run(ctx.Token);
 
