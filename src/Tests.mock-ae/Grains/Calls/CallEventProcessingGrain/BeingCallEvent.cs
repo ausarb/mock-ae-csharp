@@ -16,7 +16,7 @@ namespace Mattersight.mock.ba.ae.Tests.Grains.Calls.CallEventProcessingGrain
             // "Note: As Orleans is evolving, as of the current plans it will be possible to leverage dependency injection in other application classes as well, like StreamProviders."
             // So we can't test that the grain wires itself correctly to the stream in this test.  That must be for an end to end test.
 
-            "Given a TiConsumer consuming call events".x(async () =>
+            "Given a TiConsumer consuming call events".x(() =>
             {
                 outgoingStream = new Mock<IProducingStream<CallTranscript>>();
 

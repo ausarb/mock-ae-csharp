@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Mattersight.mock.ba.ae.Domain;
-using Mattersight.mock.ba.ae.Domain.Calls;
 using Mattersight.mock.ba.ae.Domain.Ti;
 using Mattersight.mock.ba.ae.Domain.Transcription;
+using Mattersight.mock.ba.ae.Grains.Transcription;
 using Mattersight.mock.ba.ae.ProcessingStreams;
 using Mattersight.mock.ba.ae.Serialization;
 using Orleans;
@@ -22,6 +22,7 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
     {
         private readonly IProducingStream<CallTranscript> _outgoingStream;
         private readonly IDeserializer<byte[], CallEvent> _deserializer;
+        private IAsyncStream<Guid> _callTranscriptAvailableStream;
 
         public CallEventProcessingGrain(IProducingStream<CallTranscript> outgoinStream, IDeserializer<byte[], CallEvent> deserializer)
         {
@@ -34,12 +35,13 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
             var guid = this.GetPrimaryKey();
             var streamProvider = GetStreamProvider(Configuration.OrleansStreamProviderName);
             var stream = streamProvider.GetStream<byte[]>(guid, StreamNamespaces.TiProducedCallEvents);
+            _callTranscriptAvailableStream = streamProvider.GetStream<Guid>(Guid.Empty, StreamNamespaces.CallTranscriptAvailable);
 
             await stream.SubscribeAsync(this);
             await base.OnActivateAsync();
         }
 
-        public Task OnNextAsync(byte[] item, StreamSequenceToken token = null)
+        public async Task OnNextAsync(byte[] item, StreamSequenceToken token = null)
         {
             var callEvent = _deserializer.Deserialize(item);
 
@@ -48,37 +50,30 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
             if (callEvent.AcdEvent.EventType != "end call")
             {
                 Console.WriteLine("Ignoring....");
-                return Task.CompletedTask;
+                return;
             }
 
             Console.WriteLine("Creating a transcript.");
 
             var mediumId = MediumId.Next();
-            var transcript = new CallTranscript
+            var transcriptGrainId = Guid.NewGuid();
+            var callTranscriptGrain = GrainFactory.GetGrain<ICallTranscriptGrain>(transcriptGrainId);
+            await callTranscriptGrain.SetState(new CallTranscriptState
             {
-                Call = new Call(mediumId)
-                {
-                    CallMetaData = new CallMetaData { TiCallId = callEvent.AcdEvent.CallId }
-                },
-                Transcript = new Transcript($"random transcript for call with MediumId of {mediumId.Value}.")
-            };
-
-            // The stream must know how to serialze the transcript (via dependency injection), not *this* class.  
-            // This allows multiple producers to write to the same stream.
-            _outgoingStream.OnNext(transcript);
-
-            return Task.CompletedTask;
+                MediumId = mediumId,
+                Words = $"random transcript for call with MediumId of {mediumId.Value}."
+            });
         }
 
         public Task OnCompletedAsync()
         {
-            Console.WriteLine("OnCompletedAsync!!!");
+            Console.WriteLine(GetType().FullName + ".OnCompletedAsync called!!!");
             return Task.CompletedTask;
         }
 
         public Task OnErrorAsync(Exception ex)
         {
-            Console.WriteLine("OnErrorAsync!!!");
+            Console.WriteLine(GetType().FullName + ".OnErrorAsync called!!!");
             return Task.CompletedTask;
         }
     }
