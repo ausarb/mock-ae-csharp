@@ -43,8 +43,7 @@ namespace Mattersight.mock.ba.ae
                     Console.WriteLine();
                     Console.WriteLine($"I'm going to spit out messages every {sleepPeriod.TotalSeconds} seconds.");
 
-                    //var tiConsumer = new TiConsumer(_incomingCallEventStream, _outgoingTranscriptionStream);
-                    var orleansTiConsumer = new OrleansTiConsumer(_orleansClient, _incomingCallEventStreamForOrleans);
+                    var tiConsumer = new TiConsumer(_orleansClient, _incomingCallEventStreamForOrleans);
                     do
                     {
                         Console.WriteLine($"{DateTime.Now} - Working hard...  v{version}.");

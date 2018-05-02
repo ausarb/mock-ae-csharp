@@ -1,40 +1,41 @@
-﻿using System;
-using Mattersight.mock.ba.ae.Domain.Ti;
+﻿using Mattersight.mock.ba.ae.Domain.Ti;
 using Mattersight.mock.ba.ae.Domain.Transcription;
+using Mattersight.mock.ba.ae.Grains.Calls;
 using Mattersight.mock.ba.ae.ProcessingStreams;
+using Mattersight.mock.ba.ae.Serialization;
 using Moq;
-using Shouldly;
 using Xbehave;
-using It = Moq.It;
 
 namespace Mattersight.mock.ba.ae.Tests.Consumers.TiConsumer
 {
     public class BeingCallEvent
     {
         [Scenario]
-        public void When_processing_a_begin_call_event(ae.Consumers.TiConsumer sut, Mock<IConsumingStream<CallEvent>> incomingStream, Mock<IProducingStream<CallTranscript>> outgoingStream, Action<CallEvent> onEventReceived)
+        public void When_processing_a_begin_call_event(CallEventProcessingGrain sut, Mock<IProducingStream<CallTranscript>> outgoingStream)
         {
-            "Given a TiConsumer consuming call events".x(() =>
-            {
-                incomingStream = new Mock<IConsumingStream<CallEvent>>();
-                incomingStream
-                    .Setup(x => x.Subscribe(It.IsAny<Action<CallEvent>>()))
-                    .Callback((Action<CallEvent> action) => onEventReceived = action);
+            // As of 5/2/2018, you can't DI an StreamProvider although according to https://dotnet.github.io/orleans/Documentation/Advanced-Concepts/Dependency-Injection.html
+            // "Note: As Orleans is evolving, as of the current plans it will be possible to leverage dependency injection in other application classes as well, like StreamProviders."
+            // So we can't test that the grain wires itself correctly to the stream in this test.  That must be for an end to end test.
 
+            "Given a TiConsumer consuming call events".x(async () =>
+            {
                 outgoingStream = new Mock<IProducingStream<CallTranscript>>();
 
-                sut = new ae.Consumers.TiConsumer(incomingStream.Object, outgoingStream.Object);
+                var deserializer = new Mock<IDeserializer<byte[], CallEvent>>();
+                deserializer
+                    .Setup(x => x.Deserialize(It.IsAny<byte[]>()))
+                    .Returns(new CallEvent { AcdEvent = new AcdEvent { EventType = "begin call" } });
 
-                // sanity check
-                onEventReceived.ShouldNotBeNull($"{sut.GetType()}.Start() should have registered something with the Subscribe method.");
+                sut = new CallEventProcessingGrain(outgoingStream.Object, deserializer.Object);
             });
 
-            "that receives a 'begin call' event".x(() =>
+            "that receives a 'begin call' event".x(async () =>
             {
-                onEventReceived(new CallEvent {AcdEvent = new AcdEvent {EventType = "begin call"}});
+                //Can be anything because we've moq'ed the deserializer to give us the event we want.
+                await sut.OnNextAsync(new byte[100]);
             });
 
-            "should not create a transcription".x(() =>
+            "It should not create a transcription".x(() =>
             {
                 outgoingStream.Verify(x => x.OnNext(It.IsAny<CallTranscript>()), Times.Never, "OnNext should only be called for \"end call\" events.");
             });
