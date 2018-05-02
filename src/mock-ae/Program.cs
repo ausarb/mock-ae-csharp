@@ -3,15 +3,17 @@ using System.Net;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Mattersight.mock.ae.csharp.Interfaces;
 using Mattersight.mock.ba.ae.Domain.Ti;
 using Mattersight.mock.ba.ae.Domain.Transcription;
+using Mattersight.mock.ba.ae.ProcessingStreams;
 using Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ;
 using Mattersight.mock.ba.ae.Serialization;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Orleans;
 using Orleans.Configuration;
 using Orleans.Hosting;
+using Orleans.Runtime;
 using RabbitMQ.Client;
 
 namespace Mattersight.mock.ba.ae
@@ -38,6 +40,7 @@ namespace Mattersight.mock.ba.ae
                 Port = AmqpTcpEndpoint.UseDefaultPort
             };
 
+            var incomingStreamForOrleans = new ConsumingStream<byte[]>(new QueueConfiguration { Name = "ti" }, connectionFactory, new NoopDeserializer<byte[]>());
             var incomingStream = new ConsumingStream<CallEvent>(new QueueConfiguration {Name="ti"} , connectionFactory, new ByteArrayEncodedJsonDeserializer<CallEvent>());
             var outgoingStream = new ProducingStream<CallTranscript>(new QueueConfiguration {Name="transcript"}, connectionFactory, new CallTranscriptSerializer());
 
@@ -46,6 +49,7 @@ namespace Mattersight.mock.ba.ae
             var allStarted = Task
                 .WhenAll(
                     // ReSharper disable ImplicitlyCapturedClosure
+                    Task.Run(() => { incomingStreamForOrleans.Start(cancellationToken); }, cancellationToken),
                     Task.Run(() => { incomingStream.Start(cancellationToken); }, cancellationToken),
                     Task.Run(() => { outgoingStream.Start(cancellationToken); }, cancellationToken))
                     // ReSharper restore ImplicitlyCapturedClosure
@@ -67,6 +71,11 @@ namespace Mattersight.mock.ba.ae
                 {
                     x.AdvertisedIPAddress = IPAddress.Loopback;
                 })
+                .ConfigureServices(x =>
+                {
+                    x.AddSingleton<IProducingStream<CallTranscript>>(outgoingStream);
+                    x.AddSingleton<IDeserializer<byte[], CallEvent>>(new ByteArrayEncodedJsonDeserializer<CallEvent>());
+                })
                 .ConfigureLogging(x => x.AddConsole())
                 .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName)
                 .AddMemoryGrainStorage("PubSubStore");
@@ -80,7 +89,6 @@ namespace Mattersight.mock.ba.ae
                     // ReSharper disable once MethodSupportsCancellation
                     silo.StartAsync(cancellationToken).Wait();
 
-                    //var orleansClient = new ClusterClientFactory(OrleansClusterId, OrleansServiceId, Configuration.OrleansStreamProviderName).CreateOrleansClient().Result;
                     var orleansClient = new ClientBuilder()
                         .UseLocalhostClustering()
                         .Configure<ClusterOptions>(x =>
@@ -102,11 +110,11 @@ namespace Mattersight.mock.ba.ae
                     }).Wait();
 
                     // AE is what knows what to do with these streams.  Just start them and pass them to AE.
-                    var ae = new Ae(orleansClient, incomingStream, outgoingStream).Start(cancellationToken);
+                    var ae = new Ae(orleansClient, incomingStreamForOrleans, incomingStream, outgoingStream).Start(cancellationToken);
                         
                     initializationComplete.Set();
                     // ReSharper disable once MethodSupportsCancellation
-                    ae.Wait();
+                    cancellationToken.WaitHandle.WaitOne();
                 }
             }, cancellationToken);
 

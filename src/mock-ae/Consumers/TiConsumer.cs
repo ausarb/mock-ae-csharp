@@ -1,24 +1,18 @@
 ﻿using System;
-using Mattersight.mock.ae.csharp.Interfaces;
 using Mattersight.mock.ba.ae.Domain;
 using Mattersight.mock.ba.ae.Domain.Calls;
 using Mattersight.mock.ba.ae.Domain.Ti;
 using Mattersight.mock.ba.ae.Domain.Transcription;
 using Mattersight.mock.ba.ae.ProcessingStreams;
-using Orleans;
-using Orleans.Streams;
 
 namespace Mattersight.mock.ba.ae.Consumers
 {
     public class TiConsumer
     {
         private readonly IProducingStream<CallTranscript> _outgoingStream;
-        private readonly IClusterClient _orleanClient;
 
-        public TiConsumer(IClusterClient orleansClient, IConsumingStream<CallEvent> incomingStream, IProducingStream<CallTranscript> outgoingStream)
+        public TiConsumer(IConsumingStream<CallEvent> incomingStream, IProducingStream<CallTranscript> outgoingStream)
         {
-            _orleanClient = orleansClient;
-
             incomingStream.Subscribe(Process);
             _outgoingStream = outgoingStream;
         }

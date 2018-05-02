@@ -1,7 +1,8 @@
 ﻿using System;
+
 // ReSharper disable InconsistentNaming
 
-namespace Mattersight.mock.ba.ae.Domain
+namespace Mattersight.mock.ba.ae.Domain.Calls
 {
     public interface ICallMetaData
     {

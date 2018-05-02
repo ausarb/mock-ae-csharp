@@ -5,8 +5,6 @@ WORKDIR /app
 COPY *.sln .
 COPY src/mock-ae/*.csproj ./src/mock-ae/
 COPY src/Tests.mock-ae/*.csproj ./src/Tests.mock-ae/
-COPY mock-ae-csharp.Grains/*.csproj ./mock-ae-csharp.Grains/
-COPY mock-ae-csharp.Interfaces/*.csproj ./mock-ae-csharp.Interfaces/
 RUN dotnet restore
 
 

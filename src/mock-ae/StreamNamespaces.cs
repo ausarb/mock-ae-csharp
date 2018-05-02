@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Orleans;
-
-namespace Mattersight.mock.ae.csharp.Interfaces
+﻿namespace Mattersight.mock.ba.ae
 {
     public static class StreamNamespaces
     {

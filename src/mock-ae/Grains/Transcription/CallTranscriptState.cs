@@ -1,4 +1,4 @@
-﻿namespace Mattersight.mock.ba.ae.csharp.Grains.Transcription
+﻿namespace Mattersight.mock.ba.ae.Grains.Transcription
 {
     public class CallTranscriptState
     {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -78,6 +79,7 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
                 HostName = Environment.GetEnvironmentVariable("RABBIT_HOST_NAME") ?? "127.0.0.1"
             };
 
+            var stopwatch = Stopwatch.StartNew();
             _output.WriteLine($"Going to connect to {connectionFactory.Endpoint}.");
 
             var ctx = new CancellationTokenSource();
@@ -103,9 +105,13 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             });
 
             //Give some time for the transcript consumers to work.
+            //_output.WriteLine($"{stopwatch.Elapsed.TotalSeconds} seconds: ");
+            _output.WriteLine($"{stopwatch.Elapsed.TotalSeconds} seconds: Going to wait 10 seconds and then cancel.");
             ctx.CancelAfter(TimeSpan.FromSeconds(10));
 
-            wokerTask.Wait(TimeSpan.FromSeconds(20)).ShouldBeTrue();
+            var workProcessEndedGracefully = wokerTask.Wait(TimeSpan.FromSeconds(20));
+            _output.WriteLine($"{stopwatch.Elapsed.TotalSeconds} seconds: workerTask.Wait ended with {workProcessEndedGracefully}.");
+            workProcessEndedGracefully.ShouldBeTrue();
 
             // We issued two events per call.  We should only have one transcript per tiCallIds though.
             transcripts.Count.ShouldBe(tiCallIds.Count, "There weren't as many transcriptions published as expected.");

@@ -5,6 +5,7 @@ using Mattersight.mock.ba.ae.Consumers;
 using Mattersight.mock.ba.ae.Domain.Ti;
 using Mattersight.mock.ba.ae.Domain.Transcription;
 using Mattersight.mock.ba.ae.ProcessingStreams;
+using Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ;
 using Orleans;
 
 namespace Mattersight.mock.ba.ae
@@ -14,12 +15,14 @@ namespace Mattersight.mock.ba.ae
         private Task _worker;
 
         private readonly IClusterClient _orleansClient;
+        private readonly IConsumingStream<byte[]> _incomingCallEventStreamForOrleans;
         private readonly IConsumingStream<CallEvent> _incomingCallEventStream;
         private readonly IProducingStream<CallTranscript> _outgoingTranscriptionStream;
 
-        public Ae(IClusterClient orleansClient, IConsumingStream<CallEvent> incomingCallEventStream, IProducingStream<CallTranscript> outgoingTranscriptionStream)
+        public Ae(IClusterClient orleansClient, IConsumingStream<byte[]> incomingCallEventStreamForOrleans, IConsumingStream<CallEvent> incomingCallEventStream, IProducingStream<CallTranscript> outgoingTranscriptionStream)
         {
             _orleansClient = orleansClient;
+            _incomingCallEventStreamForOrleans = incomingCallEventStreamForOrleans;
             _incomingCallEventStream = incomingCallEventStream;
             _outgoingTranscriptionStream = outgoingTranscriptionStream;
         }
@@ -40,7 +43,8 @@ namespace Mattersight.mock.ba.ae
                     Console.WriteLine();
                     Console.WriteLine($"I'm going to spit out messages every {sleepPeriod.TotalSeconds} seconds.");
 
-                    var tiConsumer = new TiConsumer(_orleansClient, _incomingCallEventStream, _outgoingTranscriptionStream);
+                    //var tiConsumer = new TiConsumer(_incomingCallEventStream, _outgoingTranscriptionStream);
+                    var orleansTiConsumer = new OrleansTiConsumer(_orleansClient, _incomingCallEventStreamForOrleans);
                     do
                     {
                         Console.WriteLine($"{DateTime.Now} - Working hard...  v{version}.");
