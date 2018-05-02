@@ -1,17 +1,16 @@
 ﻿using Mattersight.mock.ba.ae.Domain.Ti;
 using Mattersight.mock.ba.ae.Domain.Transcription;
-using Mattersight.mock.ba.ae.Grains.Calls;
 using Mattersight.mock.ba.ae.ProcessingStreams;
 using Mattersight.mock.ba.ae.Serialization;
 using Moq;
 using Xbehave;
 
-namespace Mattersight.mock.ba.ae.Tests.Consumers.TiConsumer
+namespace Mattersight.mock.ba.ae.Tests.Grains.Calls.CallEventProcessingGrain
 {
     public class EndCallEvent
     {
         [Scenario]
-        public void When_processing_a_begin_call_event(CallEventProcessingGrain sut, Mock<IProducingStream<CallTranscript>> outgoingStream)
+        public void When_processing_a_begin_call_event(ae.Grains.Calls.CallEventProcessingGrain sut, Mock<IProducingStream<CallTranscript>> outgoingStream)
         {
             // As of 5/2/2018, you can't DI an StreamProvider although according to https://dotnet.github.io/orleans/Documentation/Advanced-Concepts/Dependency-Injection.html
             // "Note: As Orleans is evolving, as of the current plans it will be possible to leverage dependency injection in other application classes as well, like StreamProviders."
@@ -26,7 +25,7 @@ namespace Mattersight.mock.ba.ae.Tests.Consumers.TiConsumer
                     .Setup(x => x.Deserialize(It.IsAny<byte[]>()))
                     .Returns(new CallEvent { AcdEvent = new AcdEvent { EventType = "end call" } });
 
-                sut = new CallEventProcessingGrain(outgoingStream.Object, deserializer.Object);
+                sut = new ae.Grains.Calls.CallEventProcessingGrain(outgoingStream.Object, deserializer.Object);
             });
 
             "that receives an 'end call' event".x(async () =>
