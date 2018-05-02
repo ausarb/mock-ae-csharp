@@ -39,7 +39,7 @@ namespace Mattersight.mock.ba.ae
                     var orleansStream = _orleansClient.GetStreamProvider(Configuration.OrleansStreamProviderName).GetStream<byte[]>(Guid.Empty, StreamNamespaces.TiProducedCallEvents);
 
                     //Works: _incomingCallEventStream.Subscribe(async x => await orleansStream.OnNextAsync(x));
-                    _incomingCallEventStream.Subscribe(x => { orleansStream.OnNextAsync(x); });
+                    _incomingCallEventStream.Subscribe(x => { orleansStream.OnNextAsync(x).Wait(); });
 
                     do
                     {
