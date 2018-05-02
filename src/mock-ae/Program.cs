@@ -6,10 +6,11 @@ using System.Threading.Tasks;
 using Mattersight.mock.ae.csharp.Interfaces;
 using Mattersight.mock.ba.ae.Domain.Ti;
 using Mattersight.mock.ba.ae.Domain.Transcription;
-using Mattersight.mock.ba.ae.Orleans;
 using Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ;
 using Mattersight.mock.ba.ae.Serialization;
+using Microsoft.Extensions.Logging;
 using Orleans;
+using Orleans.Configuration;
 using Orleans.Hosting;
 using RabbitMQ.Client;
 
@@ -17,61 +18,36 @@ namespace Mattersight.mock.ba.ae
 {
     public class Program
     {
-        private readonly ConnectionFactory _connectionFactory;
-        private readonly IClusterClient _orleansClient;
-
         private const string OrleansClusterId = "dev";
         private const string OrleansServiceId = "mock-ae-csharp";
 
-        public Program(IClusterClient orleansClient, string rabbitHostName, int rabbitPort = AmqpTcpEndpoint.UseDefaultPort)
-        {
-            _orleansClient = orleansClient;
-            _connectionFactory = new ConnectionFactory
-            {
-                HostName = rabbitHostName,
-                Port = rabbitPort
-            };
-        }
-
         public static void Main()
         {
-            Console.WriteLine($"Version = v{Assembly.GetExecutingAssembly().GetName().Version}.");
-
-            var siloBuilder = new LocalhostSiloBuilder(OrleansClusterId, OrleansServiceId)
-                .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName)
-                .AddMemoryGrainStorage("PubSubStore");
-
-            using (var silo = siloBuilder.Build())
-            {
-                silo.StartAsync().Wait();
-
-                var orleansClient = new ClusterClientFactory(OrleansClusterId, OrleansServiceId, Configuration.OrleansStreamProviderName).CreateOrleansClient().Result;
-                Console.WriteLine($"oreansClient created.  IsInitialized={orleansClient.IsInitialized}");
-
-                var ctx = new CancellationTokenSource();
-
-                //If StdIn is redirected, assume we're running in a container and use "rabbit" for the hostname, otherwise the local box, which would be dev's laptop.
-                var rabbitHostName = Console.IsInputRedirected ? "rabbit" : IPAddress.Loopback.ToString();
-
-                var workerTask = new Program(orleansClient, rabbitHostName, 5672).Run(ctx.Token);
-                workerTask.Wait(ctx.Token); //Just wait forever.
-            }
+            new Program().Run(CancellationToken.None);
         }
 
         public Task Run(CancellationToken cancellationToken)
         {
-            var ctx = new CancellationTokenSource();
+            Console.WriteLine($"Version = v{Assembly.GetExecutingAssembly().GetName().Version}.");
 
-            var incomingStream = new ConsumingStream<CallEvent>(new QueueConfiguration {Name="ti"} , _connectionFactory, new ByteArrayEncodedJsonDeserializer<CallEvent>());
-            var outgoingStream = new ProducingStream<CallTranscript>(new QueueConfiguration {Name="transcript"}, _connectionFactory, new CallTranscriptSerializer());
+            // Don't rely on Console.IsInputRedirected.  It will be true when "running" the unit tests and false when debuggin them.
+            // Instead rely on the environmental variable overriding the default of "localhost"
+            var connectionFactory = new ConnectionFactory
+            {
+                HostName = Environment.GetEnvironmentVariable("RABBIT_HOST_NAME") ?? "127.0.0.1",
+                Port = AmqpTcpEndpoint.UseDefaultPort
+            };
 
-            //Started is when the methods return, not when the tasks from them complete.  
+            var incomingStream = new ConsumingStream<CallEvent>(new QueueConfiguration {Name="ti"} , connectionFactory, new ByteArrayEncodedJsonDeserializer<CallEvent>());
+            var outgoingStream = new ProducingStream<CallTranscript>(new QueueConfiguration {Name="transcript"}, connectionFactory, new CallTranscriptSerializer());
+
+            //Started is when the methods return, not when the tasks from them complete.  Their tasks will run for the life of the app.  The method returns when the streams are "started".
             //Without the { } inside the Task.Run, it will grab the task returned by these method.  Those won't complete until the program ends.
             var allStarted = Task
                 .WhenAll(
                     // ReSharper disable ImplicitlyCapturedClosure
-                    Task.Run(() => { incomingStream.Start(ctx.Token); }, cancellationToken),
-                    Task.Run(() => { outgoingStream.Start(ctx.Token); }, cancellationToken))
+                    Task.Run(() => { incomingStream.Start(cancellationToken); }, cancellationToken),
+                    Task.Run(() => { outgoingStream.Start(cancellationToken); }, cancellationToken))
                     // ReSharper restore ImplicitlyCapturedClosure
                 .Wait(TimeSpan.FromMinutes(1));
 
@@ -80,9 +56,66 @@ namespace Mattersight.mock.ba.ae
                 throw new Exception("At least one stream did not start within 1 minute.");
             }
 
-            // AE is what knows what to do with these streams.  Just start them and pass them to AE.
-            var ae = new Ae(_orleansClient, incomingStream, outgoingStream);
-            return ae.Start(cancellationToken);
+            var siloBuilder = new SiloHostBuilder()
+                .UseLocalhostClustering() // This is only for dev/POC/test where it a one silo cluster running on "localhost"
+                .Configure<ClusterOptions>(x =>
+                {
+                    x.ClusterId = OrleansClusterId;
+                    x.ServiceId = OrleansServiceId;
+                })
+                .Configure<EndpointOptions>(x =>
+                {
+                    x.AdvertisedIPAddress = IPAddress.Loopback;
+                })
+                .ConfigureLogging(x => x.AddConsole())
+                .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName)
+                .AddMemoryGrainStorage("PubSubStore");
+
+            //This task will run until the cancellation token is signaled.
+            var initializationComplete = new ManualResetEvent(false);
+            var task = Task.Run(() =>
+            {
+                using (var silo = siloBuilder.Build())
+                {
+                    // ReSharper disable once MethodSupportsCancellation
+                    silo.StartAsync(cancellationToken).Wait();
+
+                    //var orleansClient = new ClusterClientFactory(OrleansClusterId, OrleansServiceId, Configuration.OrleansStreamProviderName).CreateOrleansClient().Result;
+                    var orleansClient = new ClientBuilder()
+                        .UseLocalhostClustering()
+                        .Configure<ClusterOptions>(x =>
+                        {
+                            x.ClusterId = OrleansClusterId;
+                            x.ServiceId = OrleansServiceId;
+                        })
+                        .ConfigureLogging(logging => logging.AddConsole())
+                        .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName)
+                        .Build();
+
+                    orleansClient.Connect(async exception =>
+                    {
+                        // Use the "retry delegate" to log an exception and retry.
+                        Console.WriteLine(exception);
+                        Console.WriteLine("Retying...");
+                        await Task.Delay(TimeSpan.FromSeconds(3));
+                        return true;
+                    }).Wait();
+
+                    // AE is what knows what to do with these streams.  Just start them and pass them to AE.
+                    var ae = new Ae(orleansClient, incomingStream, outgoingStream).Start(cancellationToken);
+                        
+                    initializationComplete.Set();
+                    // ReSharper disable once MethodSupportsCancellation
+                    ae.Wait();
+                }
+            }, cancellationToken);
+
+            if (!initializationComplete.WaitOne(TimeSpan.FromMinutes(5)))
+            {
+                throw new Exception("Initialization didn't complete within 5 mintues.");
+            }
+
+            return task;
         }
     }
 }

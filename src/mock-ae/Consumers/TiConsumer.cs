@@ -14,20 +14,13 @@ namespace Mattersight.mock.ba.ae.Consumers
     {
         private readonly IProducingStream<CallTranscript> _outgoingStream;
         private readonly IClusterClient _orleanClient;
-        private readonly IStreamProvider _orleansStreamProvider;
 
         public TiConsumer(IClusterClient orleansClient, IConsumingStream<CallEvent> incomingStream, IProducingStream<CallTranscript> outgoingStream)
         {
             _orleanClient = orleansClient;
-            _orleansStreamProvider = orleansClient.GetStreamProvider(Configuration.OrleansStreamProviderName);
+
             incomingStream.Subscribe(Process);
             _outgoingStream = outgoingStream;
-        }
-
-        private void PublishToOrleans(CallEvent callEvent)
-        {
-            var streamId = Guid.NewGuid();
-            _orleansStreamProvider.GetStream<CallEvent>(streamId, StreamNamespaces.TiProducedCallEvents);
         }
 
         private void Process(CallEvent callEvent)
