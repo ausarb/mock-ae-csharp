@@ -77,7 +77,8 @@ namespace Mattersight.mock.ba.ae
                 })
                 .ConfigureLogging(x => x.AddConsole())
                 .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName)
-                .AddMemoryGrainStorage("PubSubStore");
+                .AddMemoryGrainStorage("PubSubStore") //This is requires for our message streams
+                .AddMemoryGrainStorage(StorageProviders.CCA);
 
             //This task will run until the cancellation token is signaled.
             var initializationComplete = new ManualResetEvent(false);

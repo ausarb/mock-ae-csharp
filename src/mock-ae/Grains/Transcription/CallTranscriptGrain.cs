@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Orleans;
+using Orleans.Providers;
 
 namespace Mattersight.mock.ba.ae.Grains.Transcription
 {
@@ -9,6 +10,7 @@ namespace Mattersight.mock.ba.ae.Grains.Transcription
         Task<CallTranscriptState> GetState();
     }
 
+    [StorageProvider(ProviderName = StorageProviders.CCA)]
     public class CallTranscriptGrain : Grain<CallTranscriptState>, ICallTranscriptGrain
     {
         public Task SetState(CallTranscriptState state)
