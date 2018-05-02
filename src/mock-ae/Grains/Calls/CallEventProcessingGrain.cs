@@ -39,12 +39,6 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
             await base.OnActivateAsync();
         }
 
-        // Need so we can mock it for unit testing
-        public new virtual IStreamProvider GetStreamProvider(string name)
-        {
-            return base.GetStreamProvider(name);
-        }
-
         public Task OnNextAsync(byte[] item, StreamSequenceToken token = null)
         {
             var callEvent = _deserializer.Deserialize(item);

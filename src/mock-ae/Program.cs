@@ -13,7 +13,6 @@ using Microsoft.Extensions.Logging;
 using Orleans;
 using Orleans.Configuration;
 using Orleans.Hosting;
-using Orleans.Runtime;
 using RabbitMQ.Client;
 
 namespace Mattersight.mock.ba.ae
@@ -40,8 +39,8 @@ namespace Mattersight.mock.ba.ae
                 Port = AmqpTcpEndpoint.UseDefaultPort
             };
 
-            var incomingStreamForOrleans = new ConsumingStream<byte[]>(new QueueConfiguration { Name = "ti" }, connectionFactory, new NoopDeserializer<byte[]>());
-            var incomingStream = new ConsumingStream<CallEvent>(new QueueConfiguration {Name="ti"} , connectionFactory, new ByteArrayEncodedJsonDeserializer<CallEvent>());
+            // NoopDeserializer because the Orleans grain will do its own deserialization.  This isn't required, just "faster" at scale.
+            var incomingStream = new ConsumingStream<byte[]>(new QueueConfiguration { Name = "ti" }, connectionFactory, new NoopDeserializer<byte[]>());
             var outgoingStream = new ProducingStream<CallTranscript>(new QueueConfiguration {Name="transcript"}, connectionFactory, new CallTranscriptSerializer());
 
             //Started is when the methods return, not when the tasks from them complete.  Their tasks will run for the life of the app.  The method returns when the streams are "started".
@@ -49,7 +48,6 @@ namespace Mattersight.mock.ba.ae
             var allStarted = Task
                 .WhenAll(
                     // ReSharper disable ImplicitlyCapturedClosure
-                    Task.Run(() => { incomingStreamForOrleans.Start(cancellationToken); }, cancellationToken),
                     Task.Run(() => { incomingStream.Start(cancellationToken); }, cancellationToken),
                     Task.Run(() => { outgoingStream.Start(cancellationToken); }, cancellationToken))
                     // ReSharper restore ImplicitlyCapturedClosure
@@ -73,6 +71,7 @@ namespace Mattersight.mock.ba.ae
                 })
                 .ConfigureServices(x =>
                 {
+                    // Any grain that wants to publish to a Rabbit queue/stream just asks for the following service
                     x.AddSingleton<IProducingStream<CallTranscript>>(outgoingStream);
                     x.AddSingleton<IDeserializer<byte[], CallEvent>>(new ByteArrayEncodedJsonDeserializer<CallEvent>());
                 })
@@ -110,7 +109,7 @@ namespace Mattersight.mock.ba.ae
                     }).Wait();
 
                     // AE is what knows what to do with these streams.  Just start them and pass them to AE.
-                    var ae = new Ae(orleansClient, incomingStreamForOrleans, incomingStream, outgoingStream).Start(cancellationToken);
+                    new Ae(orleansClient, incomingStream).Start(cancellationToken);
                         
                     initializationComplete.Set();
                     // ReSharper disable once MethodSupportsCancellation

@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Mattersight.mock.ba.ae.Consumers;
-using Mattersight.mock.ba.ae.Domain.Ti;
-using Mattersight.mock.ba.ae.Domain.Transcription;
 using Mattersight.mock.ba.ae.ProcessingStreams;
-using Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ;
 using Orleans;
 
 namespace Mattersight.mock.ba.ae
@@ -15,16 +11,12 @@ namespace Mattersight.mock.ba.ae
         private Task _worker;
 
         private readonly IClusterClient _orleansClient;
-        private readonly IConsumingStream<byte[]> _incomingCallEventStreamForOrleans;
-        private readonly IConsumingStream<CallEvent> _incomingCallEventStream;
-        private readonly IProducingStream<CallTranscript> _outgoingTranscriptionStream;
+        private readonly IConsumingStream<byte[]> _incomingCallEventStream;
 
-        public Ae(IClusterClient orleansClient, IConsumingStream<byte[]> incomingCallEventStreamForOrleans, IConsumingStream<CallEvent> incomingCallEventStream, IProducingStream<CallTranscript> outgoingTranscriptionStream)
+        public Ae(IClusterClient orleansClient, IConsumingStream<byte[]> incomingCallEventStream)
         {
             _orleansClient = orleansClient;
-            _incomingCallEventStreamForOrleans = incomingCallEventStreamForOrleans;
             _incomingCallEventStream = incomingCallEventStream;
-            _outgoingTranscriptionStream = outgoingTranscriptionStream;
         }
 
         public Task Start(CancellationToken cancellationToken)
@@ -43,7 +35,10 @@ namespace Mattersight.mock.ba.ae
                     Console.WriteLine();
                     Console.WriteLine($"I'm going to spit out messages every {sleepPeriod.TotalSeconds} seconds.");
 
-                    var tiConsumer = new TiConsumer(_orleansClient, _incomingCallEventStreamForOrleans);
+                    // Chaing the Rabbit stream to the orleans stream
+                    var orleansStream = _orleansClient.GetStreamProvider(Configuration.OrleansStreamProviderName).GetStream<byte[]>(Guid.Empty, StreamNamespaces.TiProducedCallEvents);
+                    _incomingCallEventStream.Subscribe(x => orleansStream.OnNextAsync(x));
+
                     do
                     {
                         Console.WriteLine($"{DateTime.Now} - Working hard...  v{version}.");

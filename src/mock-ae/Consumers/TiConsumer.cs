@@ -15,6 +15,7 @@ namespace Mattersight.mock.ba.ae.Consumers
                 .GetStreamProvider(Configuration.OrleansStreamProviderName)
                 .GetStream<byte[]>(Guid.Empty, StreamNamespaces.TiProducedCallEvents);
 
+            //What if I takeoff the await?
             incomingStream.Subscribe(async x => await orleansStream.OnNextAsync(x));
         }
     }
