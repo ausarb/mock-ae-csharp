@@ -38,8 +38,7 @@ namespace Mattersight.mock.ba.ae
                     // Chaing the Rabbit stream to the orleans stream
                     var orleansStream = _orleansClient.GetStreamProvider(Configuration.OrleansStreamProviderName).GetStream<byte[]>(Guid.Empty, StreamNamespaces.TiProducedCallEvents);
 
-                    //Works: _incomingCallEventStream.Subscribe(async x => await orleansStream.OnNextAsync(x));
-                    _incomingCallEventStream.Subscribe(async x => { await orleansStream.OnNextAsync(x); });
+                    _incomingCallEventStream.Subscribe(async x => await orleansStream.OnNextAsync(x));
 
                     do
                     {
