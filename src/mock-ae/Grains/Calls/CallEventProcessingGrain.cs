@@ -44,8 +44,7 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
             var acdCallId = callEvent.AcdEvent.CallId;
             var call = GrainFactory.GetGrain<ICallGrain>(acdCallId);
 
-
-            Console.WriteLine($"Received '{callEvent.AcdEvent.EventType}' event for callId {callEvent.AcdEvent.CallId}.   ");
+            Console.WriteLine($"acdCallId {acdCallId}: Received '{callEvent.AcdEvent.EventType}' event.");
 
             switch (callEvent.AcdEvent.EventType.ToLower())
             {
@@ -63,11 +62,11 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
             var callState = await call.GetState();
             if (callState.StartDateTime == null || callState.EndDateTime == null)
             {
-                Console.WriteLine("Either call's start or end times (or both) are null.  Ignoring....");
+                Console.WriteLine($"acdCallId {acdCallId}: Either call's start or end times are null.  Ignoring....");
                 return;
             }
 
-            Console.WriteLine("Going to create a transcript for acdCallId " + acdCallId);
+            Console.WriteLine($"acdCallId {acdCallId}: Going to create a transcript.");
             var mediumId = MediumId.Next();
             var callTranscriptGrain = GrainFactory.GetGrain<ICallTranscriptGrain>(acdCallId);
             await callTranscriptGrain.SetState(new CallTranscriptState
