@@ -107,9 +107,9 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             //Give some time for the transcript consumers to work.
             //_output.WriteLine($"{stopwatch.Elapsed.TotalSeconds} seconds: ");
             _output.WriteLine($"{stopwatch.Elapsed.TotalSeconds} seconds: Going to wait 10 seconds and then cancel.");
-            ctx.CancelAfter(TimeSpan.FromSeconds(1000));
+            ctx.CancelAfter(TimeSpan.FromSeconds(10));
 
-            var workProcessEndedGracefully = wokerTask.Wait(TimeSpan.FromSeconds(2000));
+            var workProcessEndedGracefully = wokerTask.Wait(TimeSpan.FromSeconds(20));
             _output.WriteLine($"{stopwatch.Elapsed.TotalSeconds} seconds: workerTask.Wait ended with {workProcessEndedGracefully}.");
             workProcessEndedGracefully.ShouldBeTrue();
 

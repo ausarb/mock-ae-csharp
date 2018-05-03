@@ -22,12 +22,6 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
     public class CallGrain : Grain<CallState>, ICallGrain
     {
         //Have setters for the individual properties instead of allowing to set the entire state, which could lead to a race condition
-        protected override Task ReadStateAsync()
-        {
-            State = State ?? new CallState();
-            return base.ReadStateAsync();
-        }
-
         public async Task SetStartDate(DateTime startDateTime)
         {
             State.StartDateTime = startDateTime;
