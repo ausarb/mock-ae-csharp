@@ -2,9 +2,7 @@
 using System.Threading.Tasks;
 using Mattersight.mock.ba.ae.Domain;
 using Mattersight.mock.ba.ae.Domain.Ti;
-using Mattersight.mock.ba.ae.Domain.Transcription;
 using Mattersight.mock.ba.ae.Grains.Transcription;
-using Mattersight.mock.ba.ae.ProcessingStreams;
 using Mattersight.mock.ba.ae.Serialization;
 using Orleans;
 using Orleans.Concurrency;
@@ -21,7 +19,7 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
     public class CallEventProcessingGrain : Grain, ICallEventProcessingGrain
     {
         private readonly IDeserializer<byte[], CallEvent> _deserializer;
-        private IAsyncStream<Guid> _callTranscriptAvailableStream;
+        private IAsyncStream<string> _callTranscriptAvailableStream;
 
         public CallEventProcessingGrain(IDeserializer<byte[], CallEvent> deserializer)
         {
@@ -33,7 +31,7 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
             var guid = this.GetPrimaryKey();
             var streamProvider = GetStreamProvider(Configuration.OrleansStreamProviderName);
             var stream = streamProvider.GetStream<byte[]>(guid, StreamNamespaces.TiProducedCallEvents);
-            _callTranscriptAvailableStream = streamProvider.GetStream<Guid>(Guid.Empty, StreamNamespaces.CallTranscriptAvailable);
+            _callTranscriptAvailableStream = streamProvider.GetStream<string>(Guid.Empty, StreamNamespaces.CallTranscriptAvailable);
 
             await stream.SubscribeAsync(this);
             await base.OnActivateAsync();
@@ -43,26 +41,41 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
         {
             var callEvent = _deserializer.Deserialize(item);
 
-            Console.Write($"Received '{callEvent.AcdEvent.EventType}' event for callId {callEvent.AcdEvent.CallId}.   ");
+            var acdCallId = callEvent.AcdEvent.CallId;
+            var call = GrainFactory.GetGrain<ICallGrain>(acdCallId);
 
-            if (callEvent.AcdEvent.EventType != "end call")
+            Console.WriteLine($"Received '{callEvent.AcdEvent.EventType}' event for callId {callEvent.AcdEvent.CallId}.   ");
+
+            switch (callEvent.AcdEvent.EventType.ToLower())
             {
-                Console.WriteLine("Ignoring....");
+                case "begin call":
+                    await call.SetStartDate(callEvent.AcdEvent.TimeStamp);
+                    break;
+                case "end call":
+                    await call.SetEndDate(callEvent.AcdEvent.TimeStamp);
+                    break;
+                default:
+                    Console.WriteLine($"WARN: Unknown event type of {callEvent.AcdEvent.EventType} for callId {acdCallId}.");
+                    break;
+            }
+
+            var callState = await call.GetState();
+            if (callState.StartDateTime == null || callState.EndDateTime == null)
+            {
+                Console.WriteLine("Either call's start or end times (or both) are null.  Ignoring....");
                 return;
             }
 
-            Console.WriteLine("Creating a transcript.");
 
             var mediumId = MediumId.Next();
-            var callTranscriptGrainId = Guid.NewGuid();
-            var callTranscriptGrain = GrainFactory.GetGrain<ICallTranscriptGrain>(callTranscriptGrainId);
+            var callTranscriptGrain = GrainFactory.GetGrain<ICallTranscriptGrain>(acdCallId);
             await callTranscriptGrain.SetState(new CallTranscriptState
             {
                 MediumId = mediumId,
                 Words = $"random transcript for call with MediumId of {mediumId.Value}."
             });
 
-            await _callTranscriptAvailableStream.OnNextAsync(callTranscriptGrainId);
+            await _callTranscriptAvailableStream.OnNextAsync(acdCallId);
         }
 
         public Task OnCompletedAsync()

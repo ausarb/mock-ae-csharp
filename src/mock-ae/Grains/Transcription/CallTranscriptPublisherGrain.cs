@@ -9,7 +9,7 @@ using Orleans.Streams;
 
 namespace Mattersight.mock.ba.ae.Grains.Transcription
 {
-    public interface ICallTranscriptPublisherGrain : IGrainWithGuidKey, IAsyncObserver<Guid>
+    public interface ICallTranscriptPublisherGrain : IGrainWithGuidKey, IAsyncObserver<string>
     {
 
     }
@@ -32,23 +32,22 @@ namespace Mattersight.mock.ba.ae.Grains.Transcription
         {
             var guid = this.GetPrimaryKey();
             var streamProvider = GetStreamProvider(Configuration.OrleansStreamProviderName);
-            var stream = streamProvider.GetStream<Guid>(guid, StreamNamespaces.CallTranscriptAvailable);
+            var stream = streamProvider.GetStream<string>(guid, StreamNamespaces.CallTranscriptAvailable);
 
             await stream.SubscribeAsync(this);
 
             await base.OnActivateAsync();
         }
 
-        public async Task OnNextAsync(Guid callTranscriptGrainId, StreamSequenceToken token = null)
+        public async Task OnNextAsync(string acdCallId, StreamSequenceToken token = null)
         {
-            var transcript = GrainFactory.GetGrain<ICallTranscriptGrain>(callTranscriptGrainId);
+            var transcript = GrainFactory.GetGrain<ICallTranscriptGrain>(acdCallId);
             var state = await transcript.GetState();
             var domainCallTranscript = new CallTranscript
             {
                 Call = new Call(state.MediumId)
                 {
-                    //CallMetaData = new CallMetaData { TiCallId = callEvent.AcdEvent.CallId }
-                    CallMetaData = new CallMetaData { TiCallId = Guid.NewGuid().ToString() }
+                    CallMetaData = new CallMetaData { TiCallId = acdCallId }
                 },
                 Transcript = new Transcript(state.Words)
             };
