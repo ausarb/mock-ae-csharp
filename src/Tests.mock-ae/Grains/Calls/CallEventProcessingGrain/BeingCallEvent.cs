@@ -25,7 +25,7 @@ namespace Mattersight.mock.ba.ae.Tests.Grains.Calls.CallEventProcessingGrain
                     .Setup(x => x.Deserialize(It.IsAny<byte[]>()))
                     .Returns(new CallEvent { AcdEvent = new AcdEvent { EventType = "begin call" } });
 
-                sut = new ae.Grains.Calls.CallEventProcessingGrain(outgoingStream.Object, deserializer.Object);
+                sut = new ae.Grains.Calls.CallEventProcessingGrain(deserializer.Object);
             });
 
             "that receives a 'begin call' event".x(async () =>

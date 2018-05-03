@@ -20,13 +20,11 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
     [ImplicitStreamSubscription(StreamNamespaces.TiProducedCallEvents)]
     public class CallEventProcessingGrain : Grain, ICallEventProcessingGrain
     {
-        private readonly IProducingStream<CallTranscript> _outgoingStream;
         private readonly IDeserializer<byte[], CallEvent> _deserializer;
         private IAsyncStream<Guid> _callTranscriptAvailableStream;
 
-        public CallEventProcessingGrain(IProducingStream<CallTranscript> outgoinStream, IDeserializer<byte[], CallEvent> deserializer)
+        public CallEventProcessingGrain(IDeserializer<byte[], CallEvent> deserializer)
         {
-            _outgoingStream = outgoinStream;
             _deserializer = deserializer;
         }
 
@@ -56,13 +54,15 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
             Console.WriteLine("Creating a transcript.");
 
             var mediumId = MediumId.Next();
-            var transcriptGrainId = Guid.NewGuid();
-            var callTranscriptGrain = GrainFactory.GetGrain<ICallTranscriptGrain>(transcriptGrainId);
+            var callTranscriptGrainId = Guid.NewGuid();
+            var callTranscriptGrain = GrainFactory.GetGrain<ICallTranscriptGrain>(callTranscriptGrainId);
             await callTranscriptGrain.SetState(new CallTranscriptState
             {
                 MediumId = mediumId,
                 Words = $"random transcript for call with MediumId of {mediumId.Value}."
             });
+
+            await _callTranscriptAvailableStream.OnNextAsync(callTranscriptGrainId);
         }
 
         public Task OnCompletedAsync()

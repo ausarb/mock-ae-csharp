@@ -39,9 +39,9 @@ namespace Mattersight.mock.ba.ae.Grains.Transcription
             await base.OnActivateAsync();
         }
 
-        public async Task OnNextAsync(Guid grainId, StreamSequenceToken token = null)
+        public async Task OnNextAsync(Guid callTranscriptGrainId, StreamSequenceToken token = null)
         {
-            var transcript = GrainFactory.GetGrain<ICallTranscriptGrain>(grainId);
+            var transcript = GrainFactory.GetGrain<ICallTranscriptGrain>(callTranscriptGrainId);
             var state = await transcript.GetState();
             var domainCallTranscript = new CallTranscript
             {

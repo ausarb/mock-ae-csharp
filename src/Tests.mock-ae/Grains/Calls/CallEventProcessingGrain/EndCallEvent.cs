@@ -25,7 +25,7 @@ namespace Mattersight.mock.ba.ae.Tests.Grains.Calls.CallEventProcessingGrain
                     .Setup(x => x.Deserialize(It.IsAny<byte[]>()))
                     .Returns(new CallEvent { AcdEvent = new AcdEvent { EventType = "end call" } });
 
-                sut = new ae.Grains.Calls.CallEventProcessingGrain(outgoingStream.Object, deserializer.Object);
+                sut = new ae.Grains.Calls.CallEventProcessingGrain(deserializer.Object);
             });
 
             "that receives an 'end call' event".x(async () =>
