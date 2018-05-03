@@ -29,7 +29,7 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
         public override async Task OnActivateAsync()
         {
             var guid = this.GetPrimaryKey();
-            var streamProvider = GetStreamProvider(Configuration.OrleansStreamProviderName);
+            var streamProvider = GetStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider);
             var stream = streamProvider.GetStream<byte[]>(guid, StreamNamespaces.TiProducedCallEvents);
             _callTranscriptAvailableStream = streamProvider.GetStream<string>(Guid.Empty, StreamNamespaces.CallTranscriptAvailable);
 

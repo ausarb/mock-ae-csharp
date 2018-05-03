@@ -31,7 +31,7 @@ namespace Mattersight.mock.ba.ae.Grains.Transcription
         public override async Task OnActivateAsync()
         {
             var guid = this.GetPrimaryKey();
-            var streamProvider = GetStreamProvider(Configuration.OrleansStreamProviderName);
+            var streamProvider = GetStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider);
             var stream = streamProvider.GetStream<string>(guid, StreamNamespaces.CallTranscriptAvailable);
 
             await stream.SubscribeAsync(this);

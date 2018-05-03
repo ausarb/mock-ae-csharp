@@ -33,7 +33,7 @@ namespace Mattersight.mock.ba.ae.Tests.Orleans
                     x.AdvertisedIPAddress = IPAddress.Loopback;
                 })
                 .ConfigureLogging(x => x.AddConsole())
-                .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName)
+                .AddSimpleMessageStreamProvider(Configuration.SMSProvider)
                 .AddMemoryGrainStorage("PubSubStore") //This is requires for our message streams
                 .AddMemoryGrainStorage(StorageProviders.CCA);
         }
@@ -57,7 +57,7 @@ namespace Mattersight.mock.ba.ae.Tests.Orleans
                     x.AddSingleton<IDeserializer<byte[], CallEvent>>(new ByteArrayEncodedJsonDeserializer<CallEvent>());
                 })
                 .ConfigureLogging(x => x.AddConsole())
-                .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName)
+                .AddSimpleMessageStreamProvider(Configuration.SMSProvider)
                 .AddMemoryGrainStorage("PubSubStore") //This is requires for our message streams
                 .AddMemoryGrainStorage(StorageProviders.CCA);
          */

@@ -5,6 +5,9 @@
     /// </summary>
     public class Configuration
     {
-        public const string OrleansStreamProviderName = "SMSProvider";
+        // It isn't proper to include a type (SMSProvider) in the name, but I'm doing it for ease of troubleshooting.  
+        // SMSProvider is showing up the logs so I want to see it in the constant's name to easily find it.
+        // ReSharper disable once InconsistentNaming
+        public const string OrleansStreamProviderName_SMSProvider = "SMSProvider";
     }
 }

@@ -36,8 +36,7 @@ namespace Mattersight.mock.ba.ae
                     Console.WriteLine($"I'm going to spit out messages every {sleepPeriod.TotalSeconds} seconds.");
 
                     // Chaing the Rabbit stream to the orleans stream
-                    var orleansStream = _orleansClient.GetStreamProvider(Configuration.OrleansStreamProviderName).GetStream<byte[]>(Guid.Empty, StreamNamespaces.TiProducedCallEvents);
-
+                    var orleansStream = _orleansClient.GetStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider).GetStream<byte[]>(Guid.Empty, StreamNamespaces.TiProducedCallEvents);
                     _incomingCallEventStream.Subscribe(async x => await orleansStream.OnNextAsync(x));
 
                     do

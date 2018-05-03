@@ -76,7 +76,7 @@ namespace Mattersight.mock.ba.ae
                     x.AddSingleton<IDeserializer<byte[], CallEvent>>(new ByteArrayEncodedJsonDeserializer<CallEvent>());
                 })
                 .ConfigureLogging(x => x.AddConsole())
-                .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName)
+                .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider)
                 .AddMemoryGrainStorage("PubSubStore") //This is requires for our message streams
                 .AddMemoryGrainStorage(StorageProviders.CCA);
 
@@ -97,18 +97,20 @@ namespace Mattersight.mock.ba.ae
                             x.ServiceId = OrleansServiceId;
                         })
                         .ConfigureLogging(logging => logging.AddConsole())
-                        .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName)
+                        .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider)
                         .Build();
 
                     orleansClient.Connect(async exception =>
                     {
                         // Use the "retry delegate" to log an exception and retry.
-                        Console.WriteLine(exception);
-                        Console.WriteLine("Retying...");
+                        Console.WriteLine($"{DateTime.Now} {exception}");
+                        Console.WriteLine($"{DateTime.Now} Retrying after a 3 second sleep");
                         await Task.Delay(TimeSpan.FromSeconds(3));
-                        return true;
+                        return true;  //Return true to reattempt the connect.  Always retry.
                     }).Wait();
+                    Console.WriteLine(DateTime.Now + "Orleans client is connected.  "  + orleansClient.IsInitialized);
 
+                    
                     // AE is what knows what to do with these streams.  Just start them and pass them to AE.
                     new Ae(orleansClient, incomingStream).Start(cancellationToken);
                         
