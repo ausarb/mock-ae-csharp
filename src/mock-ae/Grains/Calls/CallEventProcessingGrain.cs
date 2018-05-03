@@ -37,12 +37,16 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
             await base.OnActivateAsync();
         }
 
+        //Made virtual for unit testing
+        //public new virtual IGrainFactory GrainFactory => base.GrainFactory;
+
         public async Task OnNextAsync(byte[] item, StreamSequenceToken token = null)
         {
             var callEvent = _deserializer.Deserialize(item);
 
             var acdCallId = callEvent.AcdEvent.CallId;
             var call = GrainFactory.GetGrain<ICallGrain>(acdCallId);
+
 
             Console.WriteLine($"Received '{callEvent.AcdEvent.EventType}' event for callId {callEvent.AcdEvent.CallId}.   ");
 

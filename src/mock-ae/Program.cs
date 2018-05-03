@@ -19,8 +19,8 @@ namespace Mattersight.mock.ba.ae
 {
     public class Program
     {
-        private const string OrleansClusterId = "dev";
-        private const string OrleansServiceId = "mock-ae-csharp";
+        public const string OrleansClusterId = "dev";
+        public const string OrleansServiceId = "mock-ae-csharp";
 
         public static void Main()
         {
