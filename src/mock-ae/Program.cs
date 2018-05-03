@@ -28,7 +28,10 @@ namespace Mattersight.mock.ba.ae
             Console.WriteLine($"Version = v{Assembly.GetExecutingAssembly().GetName().Version}.");
 
             var ctx = new CancellationTokenSource();
-            var workerTask = new Program("rabbit", 5672).Run(ctx.Token);
+
+
+            var rabbitHostName = Environment.GetEnvironmentVariable("RABBIT_HOST_NAME") ?? "127.0.0.1";
+            var workerTask = new Program(rabbitHostName, 5672).Run(ctx.Token);
 
             if (Console.IsInputRedirected)
             {
