@@ -14,7 +14,10 @@ namespace Mattersight.mock.ba.ae.Tests.Grains.Calls.CallEventProcessingGrain
     public class BeingCallEventTests : TestKitBase
     {
         [Scenario]
-        public void When_processing_a_begin_call_event(ae.Grains.Calls.CallEventProcessingGrain sut, Mock<IAsyncStream<string>> callTranscriptAvailableStream, Mock<ICallGrain> callGrain)
+        public void When_processing_a_begin_call_event(
+            ae.Grains.Calls.CallEventProcessingGrain sut, 
+            Mock<IAsyncStream<string>> callTranscriptAvailableStream, 
+            Mock<ICallGrain> callGrain)
         {
             // As of 5/2/2018, you can't DI an StreamProvider although according to https://dotnet.github.io/orleans/Documentation/Advanced-Concepts/Dependency-Injection.html
             // "Note: As Orleans is evolving, as of the current plans it will be possible to leverage dependency injection in other application classes as well, like StreamProviders."
