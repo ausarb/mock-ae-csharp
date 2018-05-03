@@ -11,7 +11,7 @@ using Xbehave;
 
 namespace Mattersight.mock.ba.ae.Tests.Grains.Calls.CallEventProcessingGrain
 {
-    public class EndCallEvent : TestKitBase
+    public class EndCallEventTests : TestKitBase
     {
         [Scenario]
         public void When_processing_a_begin_call_event(ae.Grains.Calls.CallEventProcessingGrain sut, Mock<IProducingStream<CallTranscript>> outgoingStream, Mock<ICallGrain> callGrain)
