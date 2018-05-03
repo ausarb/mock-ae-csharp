@@ -66,7 +66,7 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
                 return;
             }
 
-
+            Console.WriteLine("Going to create a transcript for acdCallId " + acdCallId);
             var mediumId = MediumId.Next();
             var callTranscriptGrain = GrainFactory.GetGrain<ICallTranscriptGrain>(acdCallId);
             await callTranscriptGrain.SetState(new CallTranscriptState
