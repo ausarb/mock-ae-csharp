@@ -91,7 +91,11 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             // Pretending to be a downstream consumer, like BI
             var transcriptStream = new ConsumingStream<CallTranscript>(new QueueConfiguration {Name = "transcript"}, connectionFactory, new CallTranscriptDeserializer());
             transcriptStream.Start(ctx.Token);
-            transcriptStream.Subscribe(transcript => transcripts.Add(transcript));
+            transcriptStream.Subscribe(transcript =>
+            {
+                Console.WriteLine("Recieved transcript: " + transcript.Transcript.Words);
+                transcripts.Add(transcript);
+            });
 
             // Pretending to be an upstream producers, like TI.  Since AE doesn't serialize TI events, this test will have to do it.
             var outputStream = new ProducingStream<string>(new QueueConfiguration {Name = "ti"}, connectionFactory, new StringSerializer());
