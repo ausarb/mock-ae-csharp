@@ -43,8 +43,8 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
             var callEvent = _deserializer.Deserialize(item);
 
             var acdCallId = callEvent.AcdEvent.CallId;
-            var call = GrainFactory.GetGrain<ICallGrain>(acdCallId);
-
+            var call = GrainFactory.GetGrain<ICallGrain>(acdCallId);  //For now, use acdCallId (aka TiCallId) for the call grain's ID.  Eventually this needs to change.
+            await call.SetTiForeignKey(acdCallId);
             Console.WriteLine($"acdCallId {acdCallId}: Received '{callEvent.AcdEvent.EventType}' event.");
 
             switch (callEvent.AcdEvent.EventType.ToLower())

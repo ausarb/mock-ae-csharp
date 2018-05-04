@@ -15,6 +15,7 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
 
     public interface ICallGrain : IGrainWithStringKey
     {
+        Task SetTiForeignKey(string tiForeignKey);
         Task SetStartDate(DateTime startDateTime);
         Task SetEndDate(DateTime endDateTime);
         Task<CallState> GetState();
