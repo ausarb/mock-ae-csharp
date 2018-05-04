@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ;
 using Mattersight.mock.ba.ae.Serialization;
 using Moq;
@@ -16,7 +17,7 @@ namespace Mattersight.mock.ba.ae.Tests.ProcessingStreams.RabbitMQ.ProducingStrea
         {
             message = new object();
             serializedMessage = Encoding.UTF8.GetBytes(Guid.NewGuid().ToString());
-            var serializer = Mock.Of<ISerializer<object, byte[]>>(x => x.Serialize(message) == serializedMessage);
+            var serializer = Mock.Of<ISerializer<object, byte[]>>(x => x.Serialize(message) == Task.FromResult(serializedMessage));
 
             var channelProperties = Mock.Of<IBasicProperties>();
             var channel = Mock.Of<IModel>(x => x.CreateBasicProperties() == channelProperties);
@@ -31,9 +32,9 @@ namespace Mattersight.mock.ba.ae.Tests.ProcessingStreams.RabbitMQ.ProducingStrea
                 sut.Start(CancellationToken.None);
             });
 
-            "When give a message to the OnNext method".x(() =>
+            "When give a message to the OnNext method".x(async () =>
             {
-                sut.OnNext(message);
+                await sut.OnNext(message);
             });
 
             "It should use the serializer to serialize the message".x(() =>

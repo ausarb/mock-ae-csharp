@@ -19,7 +19,7 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
     public class CallEventProcessingGrain : Grain, ICallEventProcessingGrain
     {
         private readonly IDeserializer<byte[], CallEvent> _deserializer;
-        private IAsyncStream<string> _callTranscriptAvailableStream;
+        private IAsyncStream<ICallTranscriptGrain> _callTranscriptAvailableStream;
 
         public CallEventProcessingGrain(IDeserializer<byte[], CallEvent> deserializer)
         {
@@ -31,7 +31,7 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
             var guid = this.GetPrimaryKey();
             var streamProvider = GetStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider);
             var stream = streamProvider.GetStream<byte[]>(guid, StreamNamespaces.TiProducedCallEvents);
-            _callTranscriptAvailableStream = streamProvider.GetStream<string>(Guid.Empty, StreamNamespaces.CallTranscriptAvailable);
+            _callTranscriptAvailableStream = streamProvider.GetStream<ICallTranscriptGrain>(Guid.Empty, StreamNamespaces.CallTranscriptAvailable);
 
             await stream.SubscribeAsync(this);
             await base.OnActivateAsync();
@@ -67,15 +67,12 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
             }
 
             Console.WriteLine($"acdCallId {acdCallId}: Going to create a transcript.");
-            var mediumId = MediumId.Next();
-            var callTranscriptGrain = GrainFactory.GetGrain<ICallTranscriptGrain>(acdCallId);
-            await callTranscriptGrain.SetState(new CallTranscriptState
-            {
-                MediumId = mediumId,
-                Words = $"random transcript for call with MediumId of {mediumId.Value}."
-            });
 
-            await _callTranscriptAvailableStream.OnNextAsync(acdCallId);
+            var callTranscriptGrain = GrainFactory.GetGrain<ICallTranscriptGrain>(acdCallId);
+            var transcript = GrainFactory.GetGrain<ITranscriptGrain>(Guid.NewGuid());
+            await callTranscriptGrain.SetState(call, transcript);
+
+            await _callTranscriptAvailableStream.OnNextAsync(callTranscriptGrain);
         }
 
         public Task OnCompletedAsync()

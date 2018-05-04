@@ -2,8 +2,10 @@
 using System.Threading.Tasks;
 using Mattersight.mock.ba.ae.Domain.Ti;
 using Mattersight.mock.ba.ae.Grains.Calls;
+using Mattersight.mock.ba.ae.Grains.Transcription;
 using Mattersight.mock.ba.ae.Serialization;
 using Moq;
+using Orleans;
 using Orleans.Streams;
 using Orleans.TestKit;
 using Shouldly;
@@ -82,7 +84,7 @@ namespace Mattersight.mock.ba.ae.Tests.Grains.Calls.CallEventProcessingGrain
         [Scenario]
         public void When_processing_a_BEGIN_CALL_event_and_call_EndTime_is_already_known(
             ae.Grains.Calls.CallEventProcessingGrain sut,
-            IAsyncStream<string> callTranscriptAvailableStream, 
+            IAsyncStream<ICallTranscriptGrain> callTranscriptAvailableStream, 
             Mock<ICallGrain> callGrain,
             Mock<IDeserializer<byte[], CallEvent>> deserializer,
             
@@ -102,8 +104,13 @@ namespace Mattersight.mock.ba.ae.Tests.Grains.Calls.CallEventProcessingGrain
                 // Thanks to the Orleans test kit, streams and providers are created on demand.  Just use the same names as the grain uses. 
                 callTranscriptAvailableStream = Silo.StreamProviderManager
                     .GetProvider(Configuration.OrleansStreamProviderName_SMSProvider)
-                    .GetStream<string>(Guid.Empty, StreamNamespaces.CallTranscriptAvailable);
-                await callTranscriptAvailableStream.SubscribeAsync((id, token) => Task.Run(() => publishedCallTranscriptId = id));
+                    .GetStream<ICallTranscriptGrain>(Guid.Empty, StreamNamespaces.CallTranscriptAvailable);
+
+                await callTranscriptAvailableStream.SubscribeAsync(async (callTranscript, token) => 
+                {
+
+                    publishedCallTranscriptId = callTranscript.GetPrimaryKeyString();
+                });
             });
 
             "And a call with an already set end time".x(() =>

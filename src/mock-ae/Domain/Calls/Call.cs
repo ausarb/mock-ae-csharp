@@ -1,19 +1,21 @@
-﻿namespace Mattersight.mock.ba.ae.Domain.Calls
+﻿using System;
+
+namespace Mattersight.mock.ba.ae.Domain.Calls
 {
     public interface ICall
     {
         ICallMetaData CallMetaData { get; set; }
-        IMediumId MediumId { get; }
+        Guid CallId { get; }
     }
 
     public class Call : ICall
     {
-        public Call(IMediumId mediumId)
+        public Call(Guid callId)
         {
-            MediumId = mediumId;
+            CallId = callId;
         }
 
-        public IMediumId MediumId { get; }
+        public Guid CallId { get; }
         public ICallMetaData CallMetaData { get; set; }
     }
 }
