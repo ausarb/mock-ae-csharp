@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Mattersight.mock.ba.ae.Domain.Ti;
 using Mattersight.mock.ba.ae.Grains.Calls;
+using Mattersight.mock.ba.ae.Grains.Transcription;
 using Mattersight.mock.ba.ae.Serialization;
 using Moq;
 using Orleans.Streams;
@@ -16,12 +17,12 @@ namespace Mattersight.mock.ba.ae.Tests.Grains.Calls.CallEventProcessingGrain
         [Scenario]
         public void When_processing_an_END_CALL_event_and_call_StartTime_is_not_yet_set(
             ae.Grains.Calls.CallEventProcessingGrain sut,
-            IAsyncStream<string> callTranscriptAvailableStream,
+            IAsyncStream<ICallTranscriptGrain> callTranscriptAvailableStream,
             Mock<ICallGrain> callGrain,
             Mock<IDeserializer<byte[], CallEvent>> deserializer,
 
             byte[] callEvent,
-            int numCallTranscriptIdsPublished)
+            int numberOfTranscriptsPublished)
         {
             "Given a CallEventProcessingGrain consuming call events".x(async () =>
             {
@@ -32,12 +33,11 @@ namespace Mattersight.mock.ba.ae.Tests.Grains.Calls.CallEventProcessingGrain
                 sut = Silo.CreateGrain<ae.Grains.Calls.CallEventProcessingGrain>(Guid.Empty);
                 await sut.OnActivateAsync();
 
-                // In order to tell if the transcript's ID was published, we've got to subscribe to the stream it will be published to.
-                // Thanks to the Orleans test kit, streams and providers are created on demand.  Just use the same names as the grain uses. 
+                // In order to tell if the transcript, we've got to subscribe to the stream it is being published to.
                 callTranscriptAvailableStream = Silo.StreamProviderManager
                     .GetProvider(Configuration.OrleansStreamProviderName_SMSProvider)
-                    .GetStream<string>(Guid.Empty, StreamNamespaces.CallTranscriptAvailable);
-                await callTranscriptAvailableStream.SubscribeAsync((id, token) => Task.Run(() => numCallTranscriptIdsPublished++));
+                    .GetStream<ICallTranscriptGrain>(Guid.Empty, StreamNamespaces.CallTranscriptAvailable);
+                await callTranscriptAvailableStream.SubscribeAsync((id, token) => Task.Run(() => numberOfTranscriptsPublished++));
             });
 
             "And a call with no start time set".x(() =>
@@ -75,19 +75,19 @@ namespace Mattersight.mock.ba.ae.Tests.Grains.Calls.CallEventProcessingGrain
 
             "It should NOT signal a transcription has been made".x(() =>
             {
-                numCallTranscriptIdsPublished.ShouldBe(0);
+                numberOfTranscriptsPublished.ShouldBe(0);
             });
         }
 
         [Scenario]
         public void When_processing_an_END_CALL_event_and_call_StartTime_is_already_known(
             ae.Grains.Calls.CallEventProcessingGrain sut,
-            IAsyncStream<string> callTranscriptAvailableStream, 
+            IAsyncStream<ICallTranscriptGrain> callTranscriptAvailableStream, 
             Mock<ICallGrain> callGrain,
             Mock<IDeserializer<byte[], CallEvent>> deserializer,
             
             byte[] callEvent,
-            string publishedCallTranscriptId)
+            int numberOfTranscriptsPublished)
         {
             "Given a CallEventProcessingGrain consuming call events".x(async () =>
             {
@@ -98,12 +98,13 @@ namespace Mattersight.mock.ba.ae.Tests.Grains.Calls.CallEventProcessingGrain
                 sut = Silo.CreateGrain<ae.Grains.Calls.CallEventProcessingGrain>(Guid.Empty);
                 await sut.OnActivateAsync();
 
-                // In order to tell if the transcript's ID was published, we've got to subscribe to the stream it will be published to.
-                // Thanks to the Orleans test kit, streams and providers are created on demand.  Just use the same names as the grain uses. 
+                // In order to tell if the transcript, we've got to subscribe to the stream it is being published to.
                 callTranscriptAvailableStream = Silo.StreamProviderManager
                     .GetProvider(Configuration.OrleansStreamProviderName_SMSProvider)
-                    .GetStream<string>(Guid.Empty, StreamNamespaces.CallTranscriptAvailable);
-                await callTranscriptAvailableStream.SubscribeAsync((id, token) => Task.Run(() => publishedCallTranscriptId = id));
+                    .GetStream<ICallTranscriptGrain>(Guid.Empty, StreamNamespaces.CallTranscriptAvailable);
+
+                //Not ideal, but since the test kit only deals with mocks when other grains are requested, we can only see if any transcript was published.
+                await callTranscriptAvailableStream.SubscribeAsync((id, token) => Task.Run(() => numberOfTranscriptsPublished++));
             });
 
             "And a call with an already set start time".x(() =>
@@ -141,7 +142,7 @@ namespace Mattersight.mock.ba.ae.Tests.Grains.Calls.CallEventProcessingGrain
 
             "It should signal a transcription has been made".x(() =>
             {
-                publishedCallTranscriptId.ShouldBe("foobar");
+                numberOfTranscriptsPublished.ShouldBe(1);
             });
         }
     }
