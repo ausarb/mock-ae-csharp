@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Orleans;
+using Orleans.Providers;
 
 namespace Mattersight.mock.ba.ae.Grains.Transcription
 {
@@ -15,9 +16,11 @@ namespace Mattersight.mock.ba.ae.Grains.Transcription
         Task<IList<string>> GetWords();
     }
 
+
     /// <summary>
     /// Made a grain so it can be stored separately for other things (like a call that it's associated with)
     /// </summary>
+    [StorageProvider(ProviderName = StorageProviders.CCA)]
     public class TranscriptGrain : Grain<TranscriptState>, ITranscriptGrain
     {
         public async Task SetWords(IList<string> words)
