@@ -93,7 +93,7 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             transcriptStream.Start(ctx.Token);
             transcriptStream.Subscribe(transcript =>
             {
-                Console.WriteLine("Recieved transcript: " + transcript.Transcript.Words);
+                Console.WriteLine("Received transcript: " + string.Join(' ', transcript.Transcript.Words));
                 transcripts.Add(transcript);
             });
 
