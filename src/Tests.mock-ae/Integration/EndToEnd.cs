@@ -113,7 +113,8 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             _output.WriteLine($"{stopwatch.Elapsed.TotalSeconds} seconds: Going to wait 10 seconds and then cancel.");
             ctx.CancelAfter(TimeSpan.FromSeconds(10));
 
-            var workProcessEndedGracefully = wokerTask.Wait(TimeSpan.FromSeconds(20));
+            // Give it 50 seconds (60 second - the 10 seconds above before a shutdown is even requested) to end since we're now disconnecting the Orleans client gracefully.
+            var workProcessEndedGracefully = wokerTask.Wait(TimeSpan.FromSeconds(60));
             _output.WriteLine($"{stopwatch.Elapsed.TotalSeconds} seconds: workerTask.Wait ended with {workProcessEndedGracefully}.");
             workProcessEndedGracefully.ShouldBeTrue();
 
