@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -64,7 +65,7 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
         [Trait("Category", "integration")]
         public void Test()
         {
-            var transcripts = new List<CallTranscript>();
+            var transcripts = new ConcurrentDictionary<string, CallTranscript>();
 
             var tiCallIds = new List<string>();
             for (var i = 0; i < 10; i++)
@@ -94,7 +95,10 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             transcriptStream.Subscribe(transcript =>
             {
                 Console.WriteLine("Received transcript: " + string.Join(' ', transcript.Transcript.Words));
-                transcripts.Add(transcript);
+                if (!transcripts.TryAdd(transcript.Call.CallMetaData.TiCallId, transcript))
+                {
+                    Console.WriteLine("Transcript couldn't be added.  It is likely a duplicate.  No harm.");
+                }
             });
 
             // Pretending to be an upstream producers, like TI.  Since AE doesn't serialize TI events, this test will have to do it.
@@ -121,7 +125,7 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             // We issued two events per call.  We should only have one transcript per tiCallIds though.
             transcripts.Count.ShouldBe(tiCallIds.Count, "There weren't as many transcriptions published as expected.");
 
-            tiCallIds.ForEach(callId => transcripts.Count(x => x.Call.CallMetaData.TiCallId == callId).ShouldBe(1, $"Unexpected number of transcripts found for {callId}."));
+            tiCallIds.ShouldBe(transcripts.Keys.ToList(), ignoreOrder: true);
         }
 
         private class CallTranscriptDeserializer : IDeserializer<byte[], CallTranscript>
