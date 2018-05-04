@@ -106,9 +106,10 @@ namespace Mattersight.mock.ba.ae
                         Console.WriteLine($"{DateTime.Now} {exception}");
                         Console.WriteLine($"{DateTime.Now} Retrying after a 3 second sleep");
                         await Task.Delay(TimeSpan.FromSeconds(3));
+                        Console.WriteLine($"{DateTime.Now} I just slept for 3 seconds.  Trying again..");
                         return true;  //Return true to reattempt the connect.  Always retry.
                     }).Wait();
-                    Console.WriteLine(DateTime.Now + "Orleans client is connected.  "  + orleansClient.IsInitialized);
+                    Console.WriteLine(DateTime.Now + " Orleans client is connected.  "  + orleansClient.IsInitialized);
 
                     
                     // AE is what knows what to do with these streams.  Just start them and pass them to AE.
