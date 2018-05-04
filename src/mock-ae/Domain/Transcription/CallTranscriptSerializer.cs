@@ -1,9 +1,9 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using System.Threading.Tasks;
 using Mattersight.mock.ba.ae.Grains.Transcription;
 using Mattersight.mock.ba.ae.Serialization;
 using Newtonsoft.Json;
-using Orleans;
 
 namespace Mattersight.mock.ba.ae.Domain.Transcription
 {
@@ -18,6 +18,8 @@ namespace Mattersight.mock.ba.ae.Domain.Transcription
                 tiForeignKey = (await state.Call.GetState()).TiForeignKey,
                 transcript = string.Join(' ', await state.Transcript.GetWords())
             });
+
+            Console.WriteLine($"Serialized a {transcript.GetType().FullName} to: {json}");
 
             return Encoding.UTF8.GetBytes(json);
         }
