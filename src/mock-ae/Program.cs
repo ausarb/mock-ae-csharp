@@ -113,7 +113,7 @@ namespace Mattersight.mock.ba.ae
                         catch (Exception exception)
                         {
                             Console.WriteLine($"{DateTime.Now} {exception}");
-                            Console.WriteLine($"{DateTime.Now} Aborting the client and retrying after a 3 second sleep.");
+                            Console.WriteLine($"{DateTime.Now} Abandoning the client and retrying with a new one after a 3 second sleep.");
                             cancellationToken.WaitHandle.WaitOne(TimeSpan.FromSeconds(3));
                             Console.WriteLine($"{DateTime.Now} Waking up and trying again.");
                         }
