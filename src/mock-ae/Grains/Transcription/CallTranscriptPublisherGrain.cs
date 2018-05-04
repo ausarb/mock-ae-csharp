@@ -38,13 +38,12 @@ namespace Mattersight.mock.ba.ae.Grains.Transcription
             await base.OnActivateAsync();
         }
 
-        public Task OnNextAsync(ICallTranscriptGrain transcript, StreamSequenceToken token = null)
+        public async Task OnNextAsync(ICallTranscriptGrain transcript, StreamSequenceToken token = null)
         {
             Console.WriteLine($"{DateTime.Now} - {GetType().FullName} - Processing a call transcript grain");
             // The stream must know how to serialze the transcript (via dependency injection), not *this* class.  
             // This allows multiple producers to write to the same stream.
-            _externalPublisher.OnNext(transcript);
-            return Task.CompletedTask;
+            await _externalPublisher.OnNext(transcript);
         }
 
         public Task OnCompletedAsync()
