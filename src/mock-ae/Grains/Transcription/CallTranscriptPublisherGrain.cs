@@ -28,6 +28,7 @@ namespace Mattersight.mock.ba.ae.Grains.Transcription
 
         public override async Task OnActivateAsync()
         {
+            Console.WriteLine($"{DateTime.Now} - {GetType().FullName} - Activated.");
             var guid = this.GetPrimaryKey();
             var streamProvider = GetStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider);
             var stream = streamProvider.GetStream<ICallTranscriptGrain>(guid, StreamNamespaces.CallTranscriptAvailable);
@@ -39,6 +40,7 @@ namespace Mattersight.mock.ba.ae.Grains.Transcription
 
         public Task OnNextAsync(ICallTranscriptGrain transcript, StreamSequenceToken token = null)
         {
+            Console.WriteLine($"{DateTime.Now} - {GetType().FullName} - Processing a call transcript grain");
             // The stream must know how to serialze the transcript (via dependency injection), not *this* class.  
             // This allows multiple producers to write to the same stream.
             _externalPublisher.OnNext(transcript);
