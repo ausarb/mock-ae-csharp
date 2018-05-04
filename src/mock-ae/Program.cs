@@ -89,7 +89,7 @@ namespace Mattersight.mock.ba.ae
                     // ReSharper disable once MethodSupportsCancellation
                     silo.StartAsync(cancellationToken).Wait();
 
-                    var orleansClient = new ClientBuilder()
+                    var orleansClientBuilder = new ClientBuilder()
                         .UseLocalhostClustering()
                         .Configure<ClusterOptions>(x =>
                         {
@@ -97,20 +97,28 @@ namespace Mattersight.mock.ba.ae
                             x.ServiceId = OrleansServiceId;
                         })
                         .ConfigureLogging(logging => logging.AddConsole())
-                        .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider)
-                        .Build();
+                        .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider);
 
-                    orleansClient.Connect(async exception =>
+                    // Due to this issue https://github.com/dotnet/orleans/issues/4427, we can't use the retry function/delegate.  
+                    // We must recreate the client.
+                    IClusterClient orleansClient = null;
+                    while (true)
                     {
-                        // Use the "retry delegate" to log an exception and retry.
-                        Console.WriteLine($"{DateTime.Now} {exception}");
-                        Console.WriteLine($"{DateTime.Now} Retrying after a 3 second sleep");
-                        await Task.Delay(TimeSpan.FromSeconds(3));
-                        Console.WriteLine($"{DateTime.Now} I just slept for 3 seconds.  Trying again..");
-                        return true;  //Return true to reattempt the connect.  Always retry.
-                    }).Wait();
-                    Console.WriteLine(DateTime.Now + " Orleans client is connected.  "  + orleansClient.IsInitialized);
+                        orleansClient = orleansClientBuilder.Build();
+                        try
+                        {
+                            orleansClient.Connect().Wait(cancellationToken);
+                            break;
+                        }
+                        catch (Exception exception)
+                        {
+                            Console.WriteLine($"{DateTime.Now} {exception}");
+                            Console.WriteLine($"{DateTime.Now} Retrying after a 3 second sleep.");
+                            cancellationToken.WaitHandle.WaitOne(TimeSpan.FromSeconds(3));
+                        }
+                    }
 
+                    Console.WriteLine(DateTime.Now + " Orleans client is connected.  "  + orleansClient.IsInitialized);
                     
                     // AE is what knows what to do with these streams.  Just start them and pass them to AE.
                     new Ae(orleansClient, incomingStream).Start(cancellationToken);
