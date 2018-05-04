@@ -123,7 +123,9 @@ namespace Mattersight.mock.ba.ae.Tests.Grains.Calls.CallEventProcessingGrain
                     .Callback((DateTime x) => callState.StartDateTime = x)
                     .Returns(Task.CompletedTask);
 
-                Silo.AddProbe(x => x.PrimaryKeyString == "foobar" ? callGrain : new Mock<ICallGrain>());
+                //Silo.AddProbe(x => x.PrimaryKeyString == "foobar" ? callGrain : new Mock<ICallGrain>());
+                Silo.AddProbe<ICallGrain>(x => new Mock<CallGrain> {CallBase = true});
+
             });
 
             "that receives a 'begin call' event".x(async () =>
