@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Mattersight.mock.ba.ae.Domain.Ti;
 using Mattersight.mock.ba.ae.Domain.Transcription;
+using Mattersight.mock.ba.ae.Grains.Transcription;
 using Mattersight.mock.ba.ae.ProcessingStreams;
 using Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ;
 using Mattersight.mock.ba.ae.Serialization;
@@ -41,7 +42,7 @@ namespace Mattersight.mock.ba.ae
 
             // NoopDeserializer because the Orleans grain will do its own deserialization.  This isn't required, just "faster" at scale.
             var incomingStream = new ConsumingStream<byte[]>(new QueueConfiguration { Name = "ti" }, connectionFactory, new NoopDeserializer<byte[]>());
-            var outgoingStream = new ProducingStream<CallTranscript>(new QueueConfiguration {Name="transcript"}, connectionFactory, new CallTranscriptSerializer());
+            var outgoingStream = new ProducingStream<ICallTranscriptGrain>(new QueueConfiguration {Name="transcript"}, connectionFactory, new CallTranscriptSerializer());
 
             //Started is when the methods return, not when the tasks from them complete.  Their tasks will run for the life of the app.  The method returns when the streams are "started".
             //Without the { } inside the Task.Run, it will grab the task returned by these method.  Those won't complete until the program ends.
@@ -72,7 +73,7 @@ namespace Mattersight.mock.ba.ae
                 .ConfigureServices(x =>
                 {
                     // Any grain that wants to publish to a Rabbit queue/stream just asks for the following service
-                    x.AddSingleton<IProducingStream<CallTranscript>>(outgoingStream);
+                    x.AddSingleton<IProducingStream<ICallTranscriptGrain>>(outgoingStream);
                     x.AddSingleton<IDeserializer<byte[], CallEvent>>(new ByteArrayEncodedJsonDeserializer<CallEvent>());
                 })
                 .ConfigureLogging(x => x.AddConsole())

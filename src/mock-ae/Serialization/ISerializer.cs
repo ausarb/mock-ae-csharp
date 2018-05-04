@@ -1,7 +1,9 @@
-﻿namespace Mattersight.mock.ba.ae.Serialization
+﻿using System.Threading.Tasks;
+
+namespace Mattersight.mock.ba.ae.Serialization
 {
-    public interface ISerializer<in TIn, out TOut>
+    public interface ISerializer<in TIn, TOut>
     {
-        TOut Serialize(TIn toBeSerialized);
+        Task<TOut> Serialize(TIn toBeSerialized);
     }
 }

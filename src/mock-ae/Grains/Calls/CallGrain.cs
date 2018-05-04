@@ -9,10 +9,13 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
     {
         public DateTime? StartDateTime { get; set; }
         public DateTime? EndDateTime { get; set; }
+        public string ANI { get; set; }
+        public string TiForeignKey { get; set; }
     }
 
     public interface ICallGrain : IGrainWithStringKey
     {
+        Task SetTiForeignKey(string tiForeignKey);
         Task SetStartDate(DateTime startDateTime);
         Task SetEndDate(DateTime endDateTime);
         Task<CallState> GetState();
@@ -21,6 +24,12 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
     [StorageProvider(ProviderName = StorageProviders.CCA)]
     public class CallGrain : Grain<CallState>, ICallGrain
     {
+        public async Task SetTiForeignKey(string tiForeignKey)
+        {
+            State.TiForeignKey = tiForeignKey;
+            await WriteStateAsync();
+        }
+
         //Have setters for the individual properties instead of allowing to set the entire state, which could lead to a race condition
         public async Task SetStartDate(DateTime startDateTime)
         {

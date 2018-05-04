@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Mattersight.mock.ba.ae.Domain;
 using Mattersight.mock.ba.ae.Domain.Ti;
@@ -19,7 +20,7 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
     public class CallEventProcessingGrain : Grain, ICallEventProcessingGrain
     {
         private readonly IDeserializer<byte[], CallEvent> _deserializer;
-        private IAsyncStream<string> _callTranscriptAvailableStream;
+        private IAsyncStream<ICallTranscriptGrain> _callTranscriptAvailableStream;
 
         public CallEventProcessingGrain(IDeserializer<byte[], CallEvent> deserializer)
         {
@@ -31,7 +32,7 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
             var guid = this.GetPrimaryKey();
             var streamProvider = GetStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider);
             var stream = streamProvider.GetStream<byte[]>(guid, StreamNamespaces.TiProducedCallEvents);
-            _callTranscriptAvailableStream = streamProvider.GetStream<string>(Guid.Empty, StreamNamespaces.CallTranscriptAvailable);
+            _callTranscriptAvailableStream = streamProvider.GetStream<ICallTranscriptGrain>(Guid.Empty, StreamNamespaces.CallTranscriptAvailable);
 
             await stream.SubscribeAsync(this);
             await base.OnActivateAsync();
@@ -42,8 +43,8 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
             var callEvent = _deserializer.Deserialize(item);
 
             var acdCallId = callEvent.AcdEvent.CallId;
-            var call = GrainFactory.GetGrain<ICallGrain>(acdCallId);
-
+            var call = GrainFactory.GetGrain<ICallGrain>(acdCallId);  //For now, use acdCallId (aka TiCallId) for the call grain's ID.  Eventually this needs to change.
+            await call.SetTiForeignKey(acdCallId);
             Console.WriteLine($"acdCallId {acdCallId}: Received '{callEvent.AcdEvent.EventType}' event.");
 
             switch (callEvent.AcdEvent.EventType.ToLower())
@@ -67,15 +68,13 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
             }
 
             Console.WriteLine($"acdCallId {acdCallId}: Going to create a transcript.");
-            var mediumId = MediumId.Next();
-            var callTranscriptGrain = GrainFactory.GetGrain<ICallTranscriptGrain>(acdCallId);
-            await callTranscriptGrain.SetState(new CallTranscriptState
-            {
-                MediumId = mediumId,
-                Words = $"random transcript for call with MediumId of {mediumId.Value}."
-            });
 
-            await _callTranscriptAvailableStream.OnNextAsync(acdCallId);
+            var callTranscriptGrain = GrainFactory.GetGrain<ICallTranscriptGrain>(acdCallId);
+            var transcript = GrainFactory.GetGrain<ITranscriptGrain>(Guid.NewGuid());
+            await transcript.SetWords("blah blah blah".Split(" ").ToList());
+            await callTranscriptGrain.SetState(call, transcript);
+
+            await _callTranscriptAvailableStream.OnNextAsync(callTranscriptGrain);
         }
 
         public Task OnCompletedAsync()

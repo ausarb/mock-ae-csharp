@@ -1,5 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Mattersight.mock.ba.ae.Domain;
+using Mattersight.mock.ba.ae.Domain.Transcription;
+using Mattersight.mock.ba.ae.Grains.Calls;
 using Orleans;
 using Orleans.Providers;
 
@@ -7,23 +9,24 @@ namespace Mattersight.mock.ba.ae.Grains.Transcription
 {
     public interface ICallTranscriptGrain : IGrainWithStringKey
     {
-        Task SetState(CallTranscriptState state);
+        Task SetState(ICallGrain call, ITranscriptGrain transcript);
         Task<CallTranscriptState> GetState();
     }
 
     public class CallTranscriptState
     {
-        public IMediumId MediumId { get; set; }
-        public string Words { get; set; }
+        public ICallGrain Call { get; set; }
+        public ITranscriptGrain Transcript { get; set; }
     }
 
     [StorageProvider(ProviderName = StorageProviders.CCA)]
     public class CallTranscriptGrain : Grain<CallTranscriptState>, ICallTranscriptGrain
     {
-        public Task SetState(CallTranscriptState state)
+        public async Task SetState(ICallGrain call, ITranscriptGrain transcript)
         {
-            State = state;
-            return WriteStateAsync();
+            State.Call = call;
+            State.Transcript = transcript;
+            await WriteStateAsync();
         }
 
         public Task<CallTranscriptState> GetState()

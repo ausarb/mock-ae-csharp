@@ -4,5 +4,6 @@
     {
         public const string TiProducedCallEvents = "TI produced call events";
         public const string CallTranscriptAvailable = "CallTranscriptAvailable";
+        public const string PersonalityTypeAvailable = "PersonalityTypeAvailable";
     }
 }

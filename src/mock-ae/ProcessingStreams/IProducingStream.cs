@@ -1,11 +1,13 @@
-﻿namespace Mattersight.mock.ba.ae.ProcessingStreams
+﻿using System.Threading.Tasks;
+
+namespace Mattersight.mock.ba.ae.ProcessingStreams
 {
-    public interface IProducingStream<TMessage> : IProcessingStream
+    public interface IProducingStream<in TMessage> : IProcessingStream
     {
         /// <summary>
         /// Used to publish messages to the stream.  A consumer is epxected to subscribe to this stream to process the messages.
         /// </summary>
         /// <param name="message">The message to publish.</param>
-        void OnNext(TMessage message);
+        Task OnNext(TMessage message);
     }
 }
