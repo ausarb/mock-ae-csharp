@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Mattersight.mock.ba.ae.Domain;
 using Mattersight.mock.ba.ae.Domain.Ti;
@@ -70,6 +71,7 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
 
             var callTranscriptGrain = GrainFactory.GetGrain<ICallTranscriptGrain>(acdCallId);
             var transcript = GrainFactory.GetGrain<ITranscriptGrain>(Guid.NewGuid());
+            await transcript.SetWords("blah blah blah".Split(" ").ToList());
             await callTranscriptGrain.SetState(call, transcript);
 
             await _callTranscriptAvailableStream.OnNextAsync(callTranscriptGrain);

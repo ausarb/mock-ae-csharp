@@ -11,8 +11,8 @@ namespace Mattersight.mock.ba.ae.Domain.Transcription
     {
         public async Task<byte[]> Serialize(ICallTranscriptGrain transcript)
         {
-            Console.WriteLine("Serializer reporting for duty.");
             var state = await transcript.GetState();
+            Console.WriteLine("Serializer reporting for duty.  TranscriptState is null? " + (state == null));
 
             var json = JsonConvert.SerializeObject(new
             {
