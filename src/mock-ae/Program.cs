@@ -127,8 +127,11 @@ namespace Mattersight.mock.ba.ae
                         
                     initializationComplete.Set();
                     // ReSharper disable once MethodSupportsCancellation
+                    Console.WriteLine($"{DateTime.Now} Startup complete.  Now waiting for cancellation token to be signaled.");
                     cancellationToken.WaitHandle.WaitOne();
+                    Console.WriteLine($"{DateTime.Now} About to close the OrleansClient");
                     orleansClient.Close().Wait(TimeSpan.FromSeconds(30));
+                    Console.WriteLine($"{DateTime.Now} OrleansClient closed.");
                 }
             }, cancellationToken);
 
