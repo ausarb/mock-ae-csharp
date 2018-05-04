@@ -89,24 +89,24 @@ namespace Mattersight.mock.ba.ae
                     // ReSharper disable once MethodSupportsCancellation
                     silo.StartAsync(cancellationToken).Wait();
 
-                    var orleansClientBuilder = new ClientBuilder()
-                        .UseLocalhostClustering()
-                        .Configure<ClusterOptions>(x =>
-                        {
-                            x.ClusterId = OrleansClusterId;
-                            x.ServiceId = OrleansServiceId;
-                        })
-                        .ConfigureLogging(logging => logging.AddConsole())
-                        .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider);
 
                     // Due to this issue https://github.com/dotnet/orleans/issues/4427, we can't use the retry function/delegate.  
                     // We must recreate the client.
                     IClusterClient orleansClient = null;
                     while (true)
                     {
-                        orleansClient = orleansClientBuilder.Build();
                         try
                         {
+                            orleansClient = new ClientBuilder()
+                                .UseLocalhostClustering()
+                                .Configure<ClusterOptions>(x =>
+                                {
+                                    x.ClusterId = OrleansClusterId;
+                                    x.ServiceId = OrleansServiceId;
+                                })
+                                .ConfigureLogging(logging => logging.AddConsole())
+                                .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider)
+                                .Build();
                             orleansClient.Connect().Wait(cancellationToken);
                             break;
                         }
@@ -114,7 +114,6 @@ namespace Mattersight.mock.ba.ae
                         {
                             Console.WriteLine($"{DateTime.Now} {exception}");
                             Console.WriteLine($"{DateTime.Now} Aborting the client and retrying after a 3 second sleep.");
-                            orleansClient.Abort();
                             cancellationToken.WaitHandle.WaitOne(TimeSpan.FromSeconds(3));
                             Console.WriteLine($"{DateTime.Now} Waking up and trying again.");
                         }
