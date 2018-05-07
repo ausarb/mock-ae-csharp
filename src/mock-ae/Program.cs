@@ -31,7 +31,6 @@ namespace Mattersight.mock.ba.ae
             _logger = logger;
             _tiEventStreamConsumer = tiEventStreamConsumer;
             _transcriptStreamProducer = transcriptStreamProducer;
-            _ae = ae;
         }
 
         public static void Main()
