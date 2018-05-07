@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Mattersight.mock.ba.ae.Domain;
 using Mattersight.mock.ba.ae.Domain.Ti;
 using Mattersight.mock.ba.ae.Grains.Transcription;
 using Mattersight.mock.ba.ae.Serialization;
+using Microsoft.Extensions.Logging;
 using Orleans;
 using Orleans.Concurrency;
 using Orleans.Streams;
@@ -19,11 +19,13 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
     [ImplicitStreamSubscription(StreamNamespaces.TiProducedCallEvents)]
     public class CallEventProcessingGrain : Grain, ICallEventProcessingGrain
     {
+        private readonly ILogger<CallEventProcessingGrain> _logger;
         private readonly IDeserializer<byte[], CallEvent> _deserializer;
         private IAsyncStream<ICallTranscriptGrain> _callTranscriptAvailableStream;
 
-        public CallEventProcessingGrain(IDeserializer<byte[], CallEvent> deserializer)
+        public CallEventProcessingGrain(ILogger<CallEventProcessingGrain> logger, IDeserializer<byte[], CallEvent> deserializer)
         {
+            _logger = logger;
             _deserializer = deserializer;
         }
 
@@ -45,7 +47,7 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
             var acdCallId = callEvent.AcdEvent.CallId;
             var call = GrainFactory.GetGrain<ICallGrain>(acdCallId);  //For now, use acdCallId (aka TiCallId) for the call grain's ID.  Eventually this needs to change.
             await call.SetTiForeignKey(acdCallId);
-            Console.WriteLine($"acdCallId {acdCallId}: Received '{callEvent.AcdEvent.EventType}' event.");
+            _logger.LogDebug($"acdCallId {acdCallId}: Received '{callEvent.AcdEvent.EventType}' event.");
 
             switch (callEvent.AcdEvent.EventType.ToLower())
             {
@@ -56,18 +58,18 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
                     await call.SetEndDate(callEvent.AcdEvent.TimeStamp);
                     break;
                 default:
-                    Console.WriteLine($"WARN: Unknown event type of {callEvent.AcdEvent.EventType} for callId {acdCallId}.");
+                    _logger.LogWarning($"WARN: Unknown event type of {callEvent.AcdEvent.EventType} for callId {acdCallId}.");
                     break;
             }
 
             var callState = await call.GetState();
             if (callState.StartDateTime == null || callState.EndDateTime == null)
             {
-                Console.WriteLine($"acdCallId {acdCallId}: Either call's start or end times are null.  Ignoring....");
+                _logger.LogDebug($"acdCallId {acdCallId}: Either call's start or end times are null.  Ignoring....");
                 return;
             }
 
-            Console.WriteLine($"acdCallId {acdCallId}: Going to create a transcript.");
+            _logger.LogDebug($"acdCallId {acdCallId}: Going to create a transcript.");
 
             var callTranscriptGrain = GrainFactory.GetGrain<ICallTranscriptGrain>(acdCallId);
             var transcript = GrainFactory.GetGrain<ITranscriptGrain>(Guid.NewGuid());

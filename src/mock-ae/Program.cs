@@ -4,17 +4,16 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Mattersight.mock.ba.ae.Domain.Ti;
-using Mattersight.mock.ba.ae.Domain.Transcription;
 using Mattersight.mock.ba.ae.Grains.Transcription;
+using Mattersight.mock.ba.ae.IoC;
 using Mattersight.mock.ba.ae.ProcessingStreams;
-using Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ;
 using Mattersight.mock.ba.ae.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NLog.Extensions.Logging;
 using Orleans;
 using Orleans.Configuration;
 using Orleans.Hosting;
-using RabbitMQ.Client;
 
 namespace Mattersight.mock.ba.ae
 {
@@ -23,34 +22,39 @@ namespace Mattersight.mock.ba.ae
         public const string OrleansClusterId = "dev";
         public const string OrleansServiceId = "mock-ae-csharp";
 
+        private readonly ILogger<Program> _logger;
+        private readonly ITiEventStreamConsumer _tiEventStreamConsumer;
+        private readonly ITranscriptStreamProducer _transcriptStreamProducer;
+
+        public Program(ILogger<Program> logger, ITiEventStreamConsumer tiEventStreamConsumer, ITranscriptStreamProducer transcriptStreamProducer)
+        {
+            _logger = logger;
+            _tiEventStreamConsumer = tiEventStreamConsumer;
+            _transcriptStreamProducer = transcriptStreamProducer;
+        }
+
         public static void Main()
         {
-            new Program().Run(CancellationToken.None);
+            Main(CancellationToken.None).Wait();
+        }
+
+        public static Task Main(CancellationToken cancellationToken)
+        {
+            var program = new ServiceProviderBuilder().Build().GetService<Program>();
+            return program.Run(cancellationToken);
         }
 
         public Task Run(CancellationToken cancellationToken)
         {
-            Console.WriteLine($"Version = v{Assembly.GetExecutingAssembly().GetName().Version}.");
-
-            // Don't rely on Console.IsInputRedirected.  It will be true when "running" the unit tests and false when debuggin them.
-            // Instead rely on the environmental variable overriding the default of "localhost"
-            var connectionFactory = new ConnectionFactory
-            {
-                HostName = Environment.GetEnvironmentVariable("RABBIT_HOST_NAME") ?? "127.0.0.1",
-                Port = AmqpTcpEndpoint.UseDefaultPort
-            };
-
-            // NoopDeserializer because the Orleans grain will do its own deserialization.  This isn't required, just "faster" at scale.
-            var incomingStream = new ConsumingStream<byte[]>(new QueueConfiguration { Name = "ti" }, connectionFactory, new NoopDeserializer<byte[]>());
-            var outgoingStream = new ProducingStream<ICallTranscriptGrain>(new QueueConfiguration {Name="transcript"}, connectionFactory, new CallTranscriptSerializer());
+            _logger.LogInformation($"Version = v{Assembly.GetExecutingAssembly().GetName().Version}.");
 
             //Started is when the methods return, not when the tasks from them complete.  Their tasks will run for the life of the app.  The method returns when the streams are "started".
             //Without the { } inside the Task.Run, it will grab the task returned by these method.  Those won't complete until the program ends.
             var allStarted = Task
                 .WhenAll(
                     // ReSharper disable ImplicitlyCapturedClosure
-                    Task.Run(() => { incomingStream.Start(cancellationToken); }, cancellationToken),
-                    Task.Run(() => { outgoingStream.Start(cancellationToken); }, cancellationToken))
+                    Task.Run(() => { _tiEventStreamConsumer.Start(cancellationToken); }, cancellationToken),
+                    Task.Run(() => { _transcriptStreamProducer.Start(cancellationToken); }, cancellationToken))
                     // ReSharper restore ImplicitlyCapturedClosure
                 .Wait(TimeSpan.FromMinutes(1));
 
@@ -73,10 +77,11 @@ namespace Mattersight.mock.ba.ae
                 .ConfigureServices(x =>
                 {
                     // Any grain that wants to publish to a Rabbit queue/stream just asks for the following service
-                    x.AddSingleton<IProducingStream<ICallTranscriptGrain>>(outgoingStream);
+                    x.AddSingleton<IProducingStream<ICallTranscriptGrain>>(_transcriptStreamProducer);
                     x.AddSingleton<IDeserializer<byte[], CallEvent>>(new ByteArrayEncodedJsonDeserializer<CallEvent>());
                 })
-                .ConfigureLogging(x => x.AddConsole())
+                .ConfigureLogging(x => x.AddNLog())
+                //.ConfigureLogging(x => x.AddConsole())
                 .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider)
                 .AddMemoryGrainStorage("PubSubStore") //This is requires for our message streams
                 .AddMemoryGrainStorage(StorageProviders.CCA);
@@ -105,7 +110,7 @@ namespace Mattersight.mock.ba.ae
                                     x.ClusterId = OrleansClusterId;
                                     x.ServiceId = OrleansServiceId;
                                 })
-                                .ConfigureLogging(logging => logging.AddConsole())
+                                .ConfigureLogging(x => x.AddNLog())
                                 .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider)
                                 .Build();
                             orleansClient.Connect().Wait(cancellationToken);
@@ -113,25 +118,23 @@ namespace Mattersight.mock.ba.ae
                         }
                         catch (Exception exception)
                         {
-                            Console.WriteLine($"{DateTime.Now} {exception}");
-                            Console.WriteLine($"{DateTime.Now} Abandoning the client and retrying with a new one after a 3 second sleep.");
+                            _logger.LogWarning(exception, "Exception while connecting to Orleans.  I will abandon the client and retry with a new one after a 3 second sleep");
                             cancellationToken.WaitHandle.WaitOne(TimeSpan.FromSeconds(3));
-                            Console.WriteLine($"{DateTime.Now} Waking up and trying again.");
+                            _logger.LogInformation("Waking up and retrying Orleans connection.");
                         }
                     }
 
-                    Console.WriteLine(DateTime.Now + " Orleans client is connected.  "  + orleansClient.IsInitialized);
+                    _logger.LogInformation($"Orleans client is connected.  orleansClient.IsInitialized={orleansClient.IsInitialized}.");
                     
                     // AE is what knows what to do with these streams.  Just start them and pass them to AE.
-                    new Ae(orleansClient, incomingStream).Start(cancellationToken);
+                    new Ae(orleansClient, _tiEventStreamConsumer).Start(cancellationToken);
                         
                     initializationComplete.Set();
-                    // ReSharper disable once MethodSupportsCancellation
-                    Console.WriteLine($"{DateTime.Now} Startup complete.  Now waiting for cancellation token to be signaled.");
+                    _logger.LogInformation("Startup complete.  Now waiting for cancellation token to be signaled.");
                     cancellationToken.WaitHandle.WaitOne();
-                    Console.WriteLine($"{DateTime.Now} About to close the OrleansClient");
+                    _logger.LogInformation("About to close the OrleansClient");
                     orleansClient.Close().Wait(TimeSpan.FromSeconds(30));
-                    Console.WriteLine($"{DateTime.Now} OrleansClient closed.");
+                    _logger.LogInformation("OrleansClient closed.");
                 }
             }, cancellationToken);
 

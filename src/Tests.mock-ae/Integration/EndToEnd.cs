@@ -11,6 +11,8 @@ using Mattersight.mock.ba.ae.Domain.Transcription;
 using Mattersight.mock.ba.ae.Grains.Transcription;
 using Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ;
 using Mattersight.mock.ba.ae.Serialization;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 using Shouldly;
@@ -85,13 +87,13 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             _output.WriteLine($"Going to connect to {connectionFactory.Endpoint}.");
 
             var ctx = new CancellationTokenSource();
-            var sut = new Program();
 
             _output.WriteLine("Starting the \"application\".");
-            var wokerTask = sut.Run(ctx.Token);
+            
+            var wokerTask = Program.Main(ctx.Token);
 
             // Pretending to be a downstream consumer, like BI
-            var transcriptStream = new ConsumingStream<BiTranscript>(new QueueConfiguration {Name = "transcript"}, connectionFactory, new CallTranscriptDeserializer());
+            var transcriptStream = new ConsumingStream<BiTranscript>(Mock.Of<ILogger<ConsumingStream<BiTranscript>>>(), new QueueConfiguration {Name = "transcript"}, connectionFactory, new CallTranscriptDeserializer());
             transcriptStream.Start(ctx.Token);
             transcriptStream.Subscribe(transcript =>
             {
@@ -129,7 +131,7 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             tiCallIds.ShouldBe(transcripts.Keys.ToList(), ignoreOrder: true);
         }
 
-        private class BiTranscript
+        public class BiTranscript
         {
             public string TiForeignKey { get; set; }
             public string Transcript { get; set; }

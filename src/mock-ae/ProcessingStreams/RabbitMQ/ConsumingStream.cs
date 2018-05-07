@@ -1,5 +1,6 @@
 ﻿using System;
 using Mattersight.mock.ba.ae.Serialization;
+using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -9,8 +10,9 @@ namespace Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ
     {
         private readonly IDeserializer<byte[], TMessage> _deserializer;
 
-        public ConsumingStream(QueueConfiguration queueConfiguration, IConnectionFactory connectionFactory, IDeserializer<byte[], TMessage> deserializer) : base(queueConfiguration, connectionFactory)
+        public ConsumingStream(ILogger<ConsumingStream<TMessage>> logger, QueueConfiguration queueConfiguration, IConnectionFactory connectionFactory, IDeserializer<byte[], TMessage> deserializer) : base(queueConfiguration, connectionFactory)
         {
+            Console.WriteLine(logger);
             _deserializer = deserializer;
         }
 
