@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Mattersight.mock.ba.ae.ProcessingStreams;
+using Microsoft.Extensions.Logging;
 using Orleans;
 using Orleans.Concurrency;
 using Orleans.Streams;
@@ -19,16 +20,17 @@ namespace Mattersight.mock.ba.ae.Grains.Transcription
     [ImplicitStreamSubscription(StreamNamespaces.CallTranscriptAvailable)]
     public class CallTranscriptPublisherGrain : Grain, ICallTranscriptPublisherGrain
     {
+        private readonly ILogger<CallTranscriptPublisherGrain> _logger;
         private readonly IProducingStream<ICallTranscriptGrain> _externalPublisher;
 
-        public CallTranscriptPublisherGrain(IProducingStream<ICallTranscriptGrain> externalPublisher)
+        public CallTranscriptPublisherGrain(ILogger<CallTranscriptPublisherGrain> logger, IProducingStream<ICallTranscriptGrain> externalPublisher)
         {
+            _logger = logger;
             _externalPublisher = externalPublisher;
         }
 
         public override async Task OnActivateAsync()
         {
-            Console.WriteLine($"{DateTime.Now} - {GetType().FullName} - Activated.");
             var guid = this.GetPrimaryKey();
             var streamProvider = GetStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider);
             var stream = streamProvider.GetStream<ICallTranscriptGrain>(guid, StreamNamespaces.CallTranscriptAvailable);
@@ -40,21 +42,21 @@ namespace Mattersight.mock.ba.ae.Grains.Transcription
 
         public async Task OnNextAsync(ICallTranscriptGrain transcript, StreamSequenceToken token = null)
         {
-            Console.WriteLine($"{DateTime.Now} - {GetType().FullName} - Processing a call transcript grain");
+            _logger.LogDebug("Processing a call transcript grain");
+            
             // The stream must know how to serialze the transcript (via dependency injection), not *this* class.  
-            // This allows multiple producers to write to the same stream.
             await _externalPublisher.OnNext(transcript);
         }
 
         public Task OnCompletedAsync()
         {
-            Console.WriteLine(GetType().FullName + ".OnCompletedAsync called!!!");
+            _logger.LogInformation(".OnCompletedAsync called!!!");
             return Task.CompletedTask;
         }
 
         public Task OnErrorAsync(Exception ex)
         {
-            Console.WriteLine(GetType().FullName + ".OnErrorAsync called!!!");
+            _logger.LogWarning(".OnErrorAsync called!!!");
             return Task.CompletedTask;
         }
     }

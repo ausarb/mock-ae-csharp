@@ -48,7 +48,6 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
             var call = GrainFactory.GetGrain<ICallGrain>(acdCallId);  //For now, use acdCallId (aka TiCallId) for the call grain's ID.  Eventually this needs to change.
             await call.SetTiForeignKey(acdCallId);
             _logger.LogDebug($"acdCallId {acdCallId}: Received '{callEvent.AcdEvent.EventType}' event.");
-            Console.WriteLine($"CONSOLE: acdCallId {acdCallId}: Received '{callEvent.AcdEvent.EventType}' event.");
 
             switch (callEvent.AcdEvent.EventType.ToLower())
             {
@@ -82,13 +81,13 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
 
         public Task OnCompletedAsync()
         {
-            Console.WriteLine(GetType().FullName + ".OnCompletedAsync called!!!");
+            _logger.LogInformation(".OnCompletedAsync called!!!");
             return Task.CompletedTask;
         }
 
         public Task OnErrorAsync(Exception ex)
         {
-            Console.WriteLine(GetType().FullName + ".OnErrorAsync called!!!");
+            _logger.LogWarning(".OnErrorAsync called!!!");
             return Task.CompletedTask;
         }
     }

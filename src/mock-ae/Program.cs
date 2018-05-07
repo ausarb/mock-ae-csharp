@@ -31,6 +31,7 @@ namespace Mattersight.mock.ba.ae
             _logger = logger;
             _tiEventStreamConsumer = tiEventStreamConsumer;
             _transcriptStreamProducer = transcriptStreamProducer;
+            _ae = ae;
         }
 
         public static void Main()
@@ -79,8 +80,13 @@ namespace Mattersight.mock.ba.ae
                     // Any grain that wants to publish to a Rabbit queue/stream just asks for the following service
                     x.AddSingleton<IProducingStream<ICallTranscriptGrain>>(_transcriptStreamProducer);
                     x.AddSingleton<IDeserializer<byte[], CallEvent>>(new ByteArrayEncodedJsonDeserializer<CallEvent>());
+
+                    // .ConfigureLogging does not work, at least I can't get it to.  So wire it up manually.
+                    // Using the same config file as the "main program" will mean client and silo log messages are interwoven.  If you won't want this, you can use a different config file.
+                    x.AddSingleton(new LoggerFactory().AddNLog(new NLogProviderOptions { CaptureMessageTemplates = true, CaptureMessageProperties = true }));
+                    NLog.LogManager.LoadConfiguration("nlog.config");
                 })
-                .ConfigureLogging(x => x.AddNLog())
+
                 //.ConfigureLogging(x => x.AddConsole())
                 .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider)
                 .AddMemoryGrainStorage("PubSubStore") //This is requires for our message streams
@@ -110,7 +116,7 @@ namespace Mattersight.mock.ba.ae
                                     x.ClusterId = OrleansClusterId;
                                     x.ServiceId = OrleansServiceId;
                                 })
-                                .ConfigureLogging(x => x.AddNLog())
+                                .ConfigureLogging(x => x.AddNLog()) //Just need to have this one line and it will hook into our logging we've already setup eariler.
                                 .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider)
                                 .Build();
                             orleansClient.Connect().Wait(cancellationToken);

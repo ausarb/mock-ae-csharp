@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 
 namespace Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ
@@ -8,11 +9,13 @@ namespace Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ
     public abstract class ProcessingStream : IProcessingStream
     {
         protected IModel Channel;
+        protected readonly ILogger<ProcessingStream> Logger;
         protected readonly QueueConfiguration QueueConfiguration;
         private readonly IConnectionFactory _connectionFactory;
 
-        protected ProcessingStream(QueueConfiguration queueConfiguration, IConnectionFactory connectionFactory)
+        protected ProcessingStream(ILogger<ProcessingStream> logger, QueueConfiguration queueConfiguration, IConnectionFactory connectionFactory)
         {
+            Logger = logger;
             QueueConfiguration = queueConfiguration;
             _connectionFactory = connectionFactory;
         }
@@ -29,7 +32,7 @@ namespace Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ
                 friendlyUri = _connectionFactory.GetType().ToString();
             }
             friendlyUri += " - QueueName=" + QueueConfiguration.Name;
-            Console.WriteLine("Connecting to: " + friendlyUri);
+            Logger.LogInformation($"Connecting to: {friendlyUri}.");
 
             var initializationComplete = new ManualResetEventSlim();
             var exceptionHappened = false;
@@ -74,7 +77,7 @@ namespace Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ
                 throw new Exception($"Exception trying to connectto RabbitMQ.  Task.Wait={completed}.", task.Exception);
             }
 
-            Console.WriteLine("Successfully connected to: " + friendlyUri);
+            Logger.LogInformation($"Successfully connected to: {friendlyUri}.");
 
             return task;
         }
