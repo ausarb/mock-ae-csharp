@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Mattersight.mock.ba.ae.Consumers;
-using Mattersight.mock.ba.ae.Domain.Ti;
-using Mattersight.mock.ba.ae.Domain.Transcription;
 using Mattersight.mock.ba.ae.ProcessingStreams;
+using Orleans;
 
 namespace Mattersight.mock.ba.ae
 {
@@ -12,13 +10,13 @@ namespace Mattersight.mock.ba.ae
     {
         private Task _worker;
 
-        private readonly IConsumingStream<CallEvent> _incomingCallEventStream;
-        private readonly IProducingStream<CallTranscript> _outgoingTranscriptionStream;
+        private readonly IClusterClient _orleansClient;
+        private readonly IConsumingStream<byte[]> _incomingCallEventStream;
 
-        public Ae(IConsumingStream<CallEvent> incomingCallEventStream, IProducingStream<CallTranscript> outgoingTranscriptionStream)
+        public Ae(IClusterClient orleansClient, IConsumingStream<byte[]> incomingCallEventStream)
         {
+            _orleansClient = orleansClient;
             _incomingCallEventStream = incomingCallEventStream;
-            _outgoingTranscriptionStream = outgoingTranscriptionStream;
         }
 
         public Task Start(CancellationToken cancellationToken)
@@ -37,7 +35,10 @@ namespace Mattersight.mock.ba.ae
                     Console.WriteLine();
                     Console.WriteLine($"I'm going to spit out messages every {sleepPeriod.TotalSeconds} seconds.");
 
-                    var tiConsumer = new TiConsumer(_incomingCallEventStream, _outgoingTranscriptionStream);
+                    // Chaing the Rabbit stream to the orleans stream
+                    var orleansStream = _orleansClient.GetStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider).GetStream<byte[]>(Guid.Empty, StreamNamespaces.TiProducedCallEvents);
+                    _incomingCallEventStream.Subscribe(async x => await orleansStream.OnNextAsync(x));
+
                     do
                     {
                         Console.WriteLine($"{DateTime.Now} - Working hard...  v{version}.");

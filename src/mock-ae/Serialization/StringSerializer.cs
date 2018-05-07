@@ -1,6 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Text;
+using System.Threading.Tasks;
 
 namespace Mattersight.mock.ba.ae.Serialization
 {
@@ -9,9 +8,9 @@ namespace Mattersight.mock.ba.ae.Serialization
     /// </summary>
     public class StringSerializer : ISerializer<string, byte[]>
     {
-        public byte[] Serialize(string toBeSerialized)
+        public Task<byte[]> Serialize(string toBeSerialized)
         {
-            return Encoding.UTF8.GetBytes(toBeSerialized);
+            return Task.FromResult(Encoding.UTF8.GetBytes(toBeSerialized));
         }
     }
 }

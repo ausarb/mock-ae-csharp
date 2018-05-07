@@ -1,11 +1,14 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using Mattersight.mock.ba.ae.Domain;
 using Mattersight.mock.ba.ae.Domain.Calls;
 using Mattersight.mock.ba.ae.Domain.Transcription;
+using Mattersight.mock.ba.ae.Grains.Transcription;
 using Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ;
 using Mattersight.mock.ba.ae.Serialization;
 using Newtonsoft.Json;
@@ -63,7 +66,7 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
         [Trait("Category", "integration")]
         public void Test()
         {
-            var transcripts = new List<CallTranscript>();
+            var transcripts = new ConcurrentDictionary<string, BiTranscript>();
 
             var tiCallIds = new List<string>();
             for (var i = 0; i < 10; i++)
@@ -78,21 +81,29 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
                 HostName = Environment.GetEnvironmentVariable("RABBIT_HOST_NAME") ?? "127.0.0.1"
             };
 
+            var stopwatch = Stopwatch.StartNew();
             _output.WriteLine($"Going to connect to {connectionFactory.Endpoint}.");
 
             var ctx = new CancellationTokenSource();
-            var sut = new Program(connectionFactory.HostName, connectionFactory.Port);
+            var sut = new Program();
 
             _output.WriteLine("Starting the \"application\".");
             var wokerTask = sut.Run(ctx.Token);
 
             // Pretending to be a downstream consumer, like BI
-            var transcriptStream = new ConsumingStream<CallTranscript>(new QueueConfiguration {Name = "transcript"}, connectionFactory, new CallTranscriptDeserializer());
+            var transcriptStream = new ConsumingStream<BiTranscript>(new QueueConfiguration {Name = "transcript"}, connectionFactory, new CallTranscriptDeserializer());
             transcriptStream.Start(ctx.Token);
-            transcriptStream.Subscribe(transcript => transcripts.Add(transcript));
+            transcriptStream.Subscribe(transcript =>
+            {
+                Console.WriteLine($"{transcript.TiForeignKey} - Received transcript: " + string.Join(' ', transcript));
+                if (!transcripts.TryAdd(transcript.TiForeignKey, transcript))
+                {
+                    Console.WriteLine("Transcript couldn't be added.  It is likely a duplicate.  No harm.");
+                }
+            });
 
-            // Pretned to be an upstream producers, like TI.  Since AE doesn't serialize TI events, this test will just blast out some json.
-            var outputStream = new ProducingStream<string>(new QueueConfiguration { Name = "ti"}, connectionFactory, new StringSerializer());
+            // Pretending to be an upstream producers, like TI.  Since AE doesn't serialize TI events, this test will have to do it.
+            var outputStream = new ProducingStream<string>(new QueueConfiguration {Name = "ti"}, connectionFactory, new StringSerializer());
             outputStream.Start(ctx.Token);
 
             //Now to publish our own "ti" messages and record off anything published to us.
@@ -103,28 +114,34 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             });
 
             //Give some time for the transcript consumers to work.
-            ctx.CancelAfter(TimeSpan.FromSeconds(10)); 
+            //_output.WriteLine($"{stopwatch.Elapsed.TotalSeconds} seconds: ");
+            _output.WriteLine($"{stopwatch.Elapsed.TotalSeconds} seconds: Going to wait 10 seconds and then cancel.");
+            ctx.CancelAfter(TimeSpan.FromSeconds(10));
 
-            wokerTask.Wait(TimeSpan.FromSeconds(20)).ShouldBeTrue();
+            // Give it 50 seconds (60 second - the 10 seconds above before a shutdown is even requested) to end since we're now disconnecting the Orleans client gracefully.
+            var workProcessEndedGracefully = wokerTask.Wait(TimeSpan.FromSeconds(60));
+            _output.WriteLine($"{stopwatch.Elapsed.TotalSeconds} seconds: workerTask.Wait ended with {workProcessEndedGracefully}.");
+            workProcessEndedGracefully.ShouldBeTrue();
 
             // We issued two events per call.  We should only have one transcript per tiCallIds though.
             transcripts.Count.ShouldBe(tiCallIds.Count, "There weren't as many transcriptions published as expected.");
 
-            tiCallIds.ForEach(callId => transcripts.Count(x => x.Call.CallMetaData.TiCallId == callId).ShouldBe(1, $"Unexpected number of transcripts found for {callId}."));
+            tiCallIds.ShouldBe(transcripts.Keys.ToList(), ignoreOrder: true);
         }
 
-        private class CallTranscriptDeserializer : IDeserializer<byte[], CallTranscript>
+        private class BiTranscript
         {
-            public CallTranscript Deserialize(byte[] toBeDeserialized)
+            public string TiForeignKey { get; set; }
+            public string Transcript { get; set; }
+        }
+
+        private class CallTranscriptDeserializer : IDeserializer<byte[], BiTranscript>
+        {
+            public BiTranscript Deserialize(byte[] toBeDeserialized)
             {
-                var definition = new { CallId = "", MediumId = default(long), Transcript = "" };
+                // Matches what is generated by CallTranscriptSerializer
                 var json = Encoding.UTF8.GetString(toBeDeserialized);
-                var temp = JsonConvert.DeserializeAnonymousType(json, definition);
-                return new CallTranscript
-                {
-                    Call = new Call(new MediumId(temp.MediumId)) {CallMetaData = new CallMetaData { TiCallId = temp.CallId }},
-                    Transcript = new Transcript(temp.Transcript)
-                };
+                return JsonConvert.DeserializeObject<BiTranscript>(json);
             }
         }
     }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Mattersight.mock.ba.ae.Serialization;
 using RabbitMQ.Client;
 
@@ -22,9 +23,9 @@ namespace Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ
             _serializer = serializer;
         }
 
-        public void OnNext(TMessage message)
+        public async Task OnNext(TMessage message)
         {
-            var serializedMessage = _serializer.Serialize(message);
+            var serializedMessage = await _serializer.Serialize(message);
             
             //According to RabbitMQ's documentation (https://www.rabbitmq.com/dotnet-api-guide.html), 
             //IModel instances (what Channel is) are not threadsafe, so lock it
