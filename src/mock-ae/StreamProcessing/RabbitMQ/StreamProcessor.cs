@@ -13,6 +13,8 @@ namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ
         protected readonly QueueConfiguration QueueConfiguration;
         private readonly IConnectionFactory _connectionFactory;
 
+        private Task _task;
+
         protected StreamProcessor(ILogger<StreamProcessor> logger, QueueConfiguration queueConfiguration, IConnectionFactory connectionFactory)
         {
             Logger = logger;
@@ -20,7 +22,7 @@ namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ
             _connectionFactory = connectionFactory;
         }
 
-        public Task Start(CancellationToken token)
+        public void Start(CancellationToken token)
         {
             string friendlyUri;
             if (_connectionFactory is ConnectionFactory uriInfo)
@@ -36,7 +38,7 @@ namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ
 
             var initializationComplete = new ManualResetEventSlim();
             var exceptionHappened = false;
-            var task = Task.Run(() =>
+            _task = Task.Run(() =>
             {
                 try
                 {
@@ -56,9 +58,9 @@ namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ
                         token.WaitHandle.WaitOne();
                     }
                 }
-                //Intended to catch an exception thrown during the connection attempt.
-                //Use a finally instead of catch/rethrow because it better preserves our stack trace.
-                finally
+            //Intended to catch an exception thrown during the connection attempt.
+            //Use a finally instead of catch/rethrow because it better preserves our stack trace.
+            finally
                 {
                     exceptionHappened = true;
                     initializationComplete.Set();
@@ -73,13 +75,11 @@ namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ
             //We must wait for the task to complete or else its exception will not be visible.
             if (exceptionHappened)
             {
-                var completed = task.Wait(TimeSpan.FromMinutes(1));
-                throw new Exception($"Exception trying to connectto RabbitMQ.  Task.Wait={completed}.", task.Exception);
+                var completed = _task.Wait(TimeSpan.FromMinutes(1));
+                throw new Exception($"Exception trying to connectto RabbitMQ.  Task.Wait={completed}.", _task.Exception);
             }
 
             Logger.LogInformation($"Successfully connected to: {friendlyUri}.");
-
-            return task;
         }
     }
 }
