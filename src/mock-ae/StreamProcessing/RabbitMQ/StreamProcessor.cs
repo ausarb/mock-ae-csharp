@@ -4,16 +4,16 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 
-namespace Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ
+namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ
 {
-    public abstract class ProcessingStream : IProcessingStream
+    public abstract class StreamProcessor : IStreamProcessor
     {
         protected IModel Channel;
-        protected readonly ILogger<ProcessingStream> Logger;
+        protected readonly ILogger<StreamProcessor> Logger;
         protected readonly QueueConfiguration QueueConfiguration;
         private readonly IConnectionFactory _connectionFactory;
 
-        protected ProcessingStream(ILogger<ProcessingStream> logger, QueueConfiguration queueConfiguration, IConnectionFactory connectionFactory)
+        protected StreamProcessor(ILogger<StreamProcessor> logger, QueueConfiguration queueConfiguration, IConnectionFactory connectionFactory)
         {
             Logger = logger;
             QueueConfiguration = queueConfiguration;

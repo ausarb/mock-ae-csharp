@@ -1,9 +1,9 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-namespace Mattersight.mock.ba.ae.ProcessingStreams
+namespace Mattersight.mock.ba.ae.StreamProcessing
 {
-    public interface IProcessingStream
+    public interface IStreamProcessor
     {
         Task Start(CancellationToken cancellationToken);
     }

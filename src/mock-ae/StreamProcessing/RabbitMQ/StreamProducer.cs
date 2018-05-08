@@ -4,14 +4,14 @@ using Mattersight.mock.ba.ae.Serialization;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 
-namespace Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ
+namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ
 {
-    public class ProducingStream<TMessage> : ProcessingStream, IProducingStream<TMessage>
+    public class StreamProducer<TMessage> : StreamProcessor, IStreamProducer<TMessage>
     {
         private readonly Lazy<IBasicProperties> _channelProperties;
         private readonly ISerializer<TMessage, byte[]> _serializer;
         
-        public ProducingStream(ILogger<ProducingStream<TMessage>> logger, QueueConfiguration queueConfiguration, IConnectionFactory connectionFactory, ISerializer<TMessage, byte[]> serializer) 
+        public StreamProducer(ILogger<StreamProducer<TMessage>> logger, QueueConfiguration queueConfiguration, IConnectionFactory connectionFactory, ISerializer<TMessage, byte[]> serializer) 
             : base(logger, queueConfiguration, connectionFactory)
         {
             _channelProperties = new Lazy<IBasicProperties>(() =>

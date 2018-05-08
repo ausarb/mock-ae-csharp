@@ -1,4 +1,4 @@
-﻿namespace Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ
+﻿namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ
 {
     public class QueueConfiguration
     {

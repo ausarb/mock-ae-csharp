@@ -2,8 +2,8 @@
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ;
 using Mattersight.mock.ba.ae.Serialization;
+using Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ;
 using Microsoft.Extensions.Logging;
 using Moq;
 using RabbitMQ.Client;
@@ -14,7 +14,7 @@ namespace Mattersight.mock.ba.ae.Tests.ProcessingStreams.RabbitMQ.ProducingStrea
     public class Producing
     {
         [Scenario]
-        public void When_OnNext_method_called(ProducingStream<object> sut, QueueConfiguration queueConfiguration, byte[] serializedMessage, object message)
+        public void When_OnNext_method_called(StreamProducer<object> sut, QueueConfiguration queueConfiguration, byte[] serializedMessage, object message)
         {
             message = new object();
             serializedMessage = Encoding.UTF8.GetBytes(Guid.NewGuid().ToString());
@@ -29,7 +29,7 @@ namespace Mattersight.mock.ba.ae.Tests.ProcessingStreams.RabbitMQ.ProducingStrea
 
                 var connection = Mock.Of<IConnection>(x => x.CreateModel() == channel);
                 var connectionFactory = Mock.Of<IConnectionFactory>(x => x.CreateConnection() == connection);
-                sut = new ProducingStream<object>(Mock.Of<ILogger<ProducingStream<object>>>(), queueConfiguration, connectionFactory, serializer);
+                sut = new StreamProducer<object>(Mock.Of<ILogger<StreamProducer<object>>>(), queueConfiguration, connectionFactory, serializer);
                 sut.Start(CancellationToken.None);
             });
 

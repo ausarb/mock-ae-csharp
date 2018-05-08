@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Mattersight.mock.ba.ae.ProcessingStreams;
+using Mattersight.mock.ba.ae.StreamProcessing;
 using Orleans;
 
 namespace Mattersight.mock.ba.ae
@@ -11,9 +11,9 @@ namespace Mattersight.mock.ba.ae
         private Task _worker;
 
         private readonly IClusterClient _orleansClient;
-        private readonly IConsumingStream<byte[]> _incomingCallEventStream;
+        private readonly IStreamConsumer<byte[]> _incomingCallEventStream;
 
-        public Ae(IClusterClient orleansClient, IConsumingStream<byte[]> incomingCallEventStream)
+        public Ae(IClusterClient orleansClient, IStreamConsumer<byte[]> incomingCallEventStream)
         {
             _orleansClient = orleansClient;
             _incomingCallEventStream = incomingCallEventStream;

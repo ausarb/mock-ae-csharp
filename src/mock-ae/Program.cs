@@ -7,8 +7,8 @@ using Mattersight.mock.ba.ae.Domain.Personality;
 using Mattersight.mock.ba.ae.Domain.Ti;
 using Mattersight.mock.ba.ae.Grains.Transcription;
 using Mattersight.mock.ba.ae.IoC;
-using Mattersight.mock.ba.ae.ProcessingStreams;
 using Mattersight.mock.ba.ae.Serialization;
+using Mattersight.mock.ba.ae.StreamProcessing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
@@ -90,7 +90,7 @@ namespace Mattersight.mock.ba.ae
                 .ConfigureServices(x =>
                 {
                     // Any grain that wants to publish to a Rabbit queue/stream just asks for the following service
-                    x.AddSingleton<IProducingStream<ICallTranscriptGrain>>(_transcriptStreamProducer);
+                    x.AddSingleton<IStreamProducer<ICallTranscriptGrain>>(_transcriptStreamProducer);
                     x.AddSingleton<IDeserializer<byte[], CallEvent>>(new ByteArrayEncodedJsonDeserializer<CallEvent>());
                     x.AddSingleton<IPersonalityTypeDeterminer, PersonalityTypeDeterminer>();
 

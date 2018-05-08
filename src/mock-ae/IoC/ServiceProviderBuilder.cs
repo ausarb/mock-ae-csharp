@@ -1,8 +1,8 @@
 ﻿using System;
 using Mattersight.mock.ba.ae.Domain.Transcription;
 using Mattersight.mock.ba.ae.Grains.Transcription;
-using Mattersight.mock.ba.ae.ProcessingStreams;
 using Mattersight.mock.ba.ae.Serialization;
+using Mattersight.mock.ba.ae.StreamProcessing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;

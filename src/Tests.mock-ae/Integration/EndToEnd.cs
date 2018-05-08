@@ -9,8 +9,8 @@ using Mattersight.mock.ba.ae.Domain;
 using Mattersight.mock.ba.ae.Domain.Calls;
 using Mattersight.mock.ba.ae.Domain.Transcription;
 using Mattersight.mock.ba.ae.Grains.Transcription;
-using Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ;
 using Mattersight.mock.ba.ae.Serialization;
+using Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Newtonsoft.Json;
@@ -93,7 +93,7 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             var wokerTask = Program.Main(ctx.Token);
 
             // Pretending to be a downstream consumer, like BI
-            var transcriptStream = new ConsumingStream<BiTranscript>(Mock.Of<ILogger<ConsumingStream<BiTranscript>>>(), new QueueConfiguration {Name = "transcript"}, connectionFactory, new CallTranscriptDeserializer());
+            var transcriptStream = new StreamConsumer<BiTranscript>(Mock.Of<ILogger<StreamConsumer<BiTranscript>>>(), new QueueConfiguration {Name = "transcript"}, connectionFactory, new CallTranscriptDeserializer());
             transcriptStream.Start(ctx.Token);
             transcriptStream.Subscribe(transcript =>
             {
@@ -105,7 +105,7 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             });
 
             // Pretending to be an upstream producers, like TI.  Since AE doesn't serialize TI events, this test will have to do it.
-            var outputStream = new ProducingStream<string>(Mock.Of<ILogger<ProducingStream<string>>>(), new QueueConfiguration {Name = "ti"}, connectionFactory, new StringSerializer());
+            var outputStream = new StreamProducer<string>(Mock.Of<ILogger<StreamProducer<string>>>(), new QueueConfiguration {Name = "ti"}, connectionFactory, new StringSerializer());
             outputStream.Start(ctx.Token);
 
             //Now to publish our own "ti" messages and record off anything published to us.

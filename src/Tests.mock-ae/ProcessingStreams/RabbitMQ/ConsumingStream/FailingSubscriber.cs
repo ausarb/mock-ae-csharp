@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
-using Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ;
 using Mattersight.mock.ba.ae.Serialization;
+using Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ;
 using Microsoft.Extensions.Logging;
 using Moq;
 using RabbitMQ.Client;
@@ -15,7 +15,7 @@ namespace Mattersight.mock.ba.ae.Tests.ProcessingStreams.RabbitMQ.ConsumingStrea
     public class FailingSubscriber
     {
         [Scenario]
-        public void When_subscribers_event_proccesing_throws_an_exception(ConsumingStream<object> sut, IBasicConsumer consumer, Mock<IModel> channel, ulong deliveryTag = 1234)
+        public void When_subscribers_event_proccesing_throws_an_exception(StreamConsumer<object> sut, IBasicConsumer consumer, Mock<IModel> channel, ulong deliveryTag = 1234)
         {
             var ctx = new CancellationTokenSource();
             try
@@ -34,7 +34,7 @@ namespace Mattersight.mock.ba.ae.Tests.ProcessingStreams.RabbitMQ.ConsumingStrea
                     var connectionFactory = Mock.Of<IConnectionFactory>(x => x.CreateConnection() == connection);
 
                     var deserializer = Mock.Of<IDeserializer<byte[], object>>(x => x.Deserialize(It.IsAny<byte[]>()) == new object());
-                    sut = new ConsumingStream<object>(Mock.Of<ILogger<ConsumingStream<object>>>(), new QueueConfiguration(), connectionFactory, deserializer);
+                    sut = new StreamConsumer<object>(Mock.Of<ILogger<StreamConsumer<object>>>(), new QueueConfiguration(), connectionFactory, deserializer);
                     sut.Start(CancellationToken.None);
                 });
 

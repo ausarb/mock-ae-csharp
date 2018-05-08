@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace Mattersight.mock.ba.ae.ProcessingStreams
+namespace Mattersight.mock.ba.ae.StreamProcessing
 {
-    public interface IConsumingStream<out TMessage> : IProcessingStream
+    public interface IStreamConsumer<out TMessage> : IStreamProcessor
     {
         /// <summary>
         /// Used to subscribe the consumer to the stream.

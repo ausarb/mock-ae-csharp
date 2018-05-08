@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Mattersight.mock.ba.ae.ProcessingStreams;
+using Mattersight.mock.ba.ae.StreamProcessing;
 using Microsoft.Extensions.Logging;
 using Orleans;
 using Orleans.Concurrency;
@@ -21,9 +21,9 @@ namespace Mattersight.mock.ba.ae.Grains.Transcription
     public class CallTranscriptPublisherGrain : Grain, ICallTranscriptPublisherGrain
     {
         private readonly ILogger<CallTranscriptPublisherGrain> _logger;
-        private readonly IProducingStream<ICallTranscriptGrain> _externalPublisher;
+        private readonly IStreamProducer<ICallTranscriptGrain> _externalPublisher;
 
-        public CallTranscriptPublisherGrain(ILogger<CallTranscriptPublisherGrain> logger, IProducingStream<ICallTranscriptGrain> externalPublisher)
+        public CallTranscriptPublisherGrain(ILogger<CallTranscriptPublisherGrain> logger, IStreamProducer<ICallTranscriptGrain> externalPublisher)
         {
             _logger = logger;
             _externalPublisher = externalPublisher;
