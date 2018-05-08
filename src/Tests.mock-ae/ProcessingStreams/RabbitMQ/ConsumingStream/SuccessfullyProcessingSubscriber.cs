@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ;
 using Mattersight.mock.ba.ae.Serialization;
+using Microsoft.Extensions.Logging;
 using Moq;
 using RabbitMQ.Client;
 using Xbehave;
@@ -32,7 +33,7 @@ namespace Mattersight.mock.ba.ae.Tests.ProcessingStreams.RabbitMQ.ConsumingStrea
                     var connectionFactory = Mock.Of<IConnectionFactory>(x => x.CreateConnection() == connection);
 
                     var deserializer = Mock.Of<IDeserializer<byte[], object>>(x => x.Deserialize(It.IsAny<byte[]>()) == new object());
-                    sut = new ConsumingStream<object>(new QueueConfiguration(), connectionFactory, deserializer);
+                    sut = new ConsumingStream<object>(Mock.Of<ILogger<ConsumingStream<object>>>(), new QueueConfiguration(), connectionFactory, deserializer);
                     sut.Start(CancellationToken.None);
                 });
 

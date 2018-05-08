@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Mattersight.mock.ba.ae.Serialization
+﻿namespace Mattersight.mock.ba.ae.Serialization
 {
     /// <summary>
     /// Doesn't do any real deserialization.  It just returns the item to be deserialized.

@@ -1,5 +1,6 @@
 ﻿using System;
 using Mattersight.mock.ba.ae.Serialization;
+using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -9,7 +10,8 @@ namespace Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ
     {
         private readonly IDeserializer<byte[], TMessage> _deserializer;
 
-        public ConsumingStream(QueueConfiguration queueConfiguration, IConnectionFactory connectionFactory, IDeserializer<byte[], TMessage> deserializer) : base(queueConfiguration, connectionFactory)
+        public ConsumingStream(ILogger<ConsumingStream<TMessage>> logger, QueueConfiguration queueConfiguration, IConnectionFactory connectionFactory, IDeserializer<byte[], TMessage> deserializer) 
+            : base(logger, queueConfiguration, connectionFactory)
         {
             _deserializer = deserializer;
         }
@@ -29,8 +31,7 @@ namespace Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ
                 }
                 catch (Exception exception)
                 {
-                    //WARN
-                    Console.WriteLine($"Unhandled exception thrown from messageHandler.  Message will be requeued.  QueueName={QueueConfiguration.Name}.{Environment.NewLine}{exception}");
+                    Logger.LogWarning($"Unhandled exception thrown from messageHandler.  Message will be requeued.  QueueName={QueueConfiguration.Name}.{Environment.NewLine}{exception}");
                     Channel.BasicNack(eventArgs.DeliveryTag, multiple: false, requeue: true);
                 }
             };
