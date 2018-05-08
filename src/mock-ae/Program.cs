@@ -3,6 +3,7 @@ using System.Net;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Mattersight.mock.ba.ae.Domain.Personality;
 using Mattersight.mock.ba.ae.Domain.Ti;
 using Mattersight.mock.ba.ae.Grains.Transcription;
 using Mattersight.mock.ba.ae.IoC;
@@ -91,6 +92,7 @@ namespace Mattersight.mock.ba.ae
                     // Any grain that wants to publish to a Rabbit queue/stream just asks for the following service
                     x.AddSingleton<IProducingStream<ICallTranscriptGrain>>(_transcriptStreamProducer);
                     x.AddSingleton<IDeserializer<byte[], CallEvent>>(new ByteArrayEncodedJsonDeserializer<CallEvent>());
+                    x.AddSingleton<IPersonalityTypeDeterminer, PersonalityTypeDeterminer>();
 
                     // .ConfigureLogging does not work, at least I can't get it to.  So wire it up manually.
                     // Using the same config file as the "main program" will mean client and silo log messages are interwoven.  If you won't want this, you can use a different config file.
