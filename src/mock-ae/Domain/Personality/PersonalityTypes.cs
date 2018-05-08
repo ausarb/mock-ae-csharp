@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Mattersight.mock.ba.ae.Domain.Personality
+﻿namespace Mattersight.mock.ba.ae.Domain.Personality
 {
     public enum PersonalityTypes
     {

@@ -1,6 +1,4 @@
 ﻿using System.Threading.Tasks;
-using Mattersight.mock.ba.ae.Domain;
-using Mattersight.mock.ba.ae.Domain.Transcription;
 using Mattersight.mock.ba.ae.Grains.Calls;
 using Orleans;
 using Orleans.Providers;
