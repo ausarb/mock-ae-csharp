@@ -35,7 +35,19 @@ namespace Mattersight.mock.ba.ae
 
         public static void Main()
         {
-            Main(CancellationToken.None).Wait();
+            try
+            {
+                Main(CancellationToken.None).Wait();
+            }
+            finally
+            {
+                // This may should be moved to an AppDomain.OnUnload type of location.
+                try
+                {
+                    NLog.LogManager.Shutdown();
+                }
+                catch { /* Ignore */ }
+            }
         }
 
         public static Task Main(CancellationToken cancellationToken)
