@@ -85,7 +85,8 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             var ctx = new CancellationTokenSource();
 
             _output.WriteLine("Starting the \"application\".");
-            
+            Console.WriteLine("Starting the \"application\".");
+
             var wokerTask = Program.Main(ctx.Token);
 
             // Pretending to be a downstream consumer, like BI
@@ -112,7 +113,6 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             });
 
             //Give some time for the transcript consumers to work.
-            //_output.WriteLine($"{stopwatch.Elapsed.TotalSeconds} seconds: ");
             _output.WriteLine($"{stopwatch.Elapsed.TotalSeconds} seconds: Going to wait 10 seconds and then cancel.");
             ctx.CancelAfter(TimeSpan.FromSeconds(10));
 
@@ -125,6 +125,8 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             transcripts.Count.ShouldBe(tiCallIds.Count, "There weren't as many transcriptions published as expected.");
 
             tiCallIds.ShouldBe(transcripts.Keys.ToList(), ignoreOrder: true);
+
+            Console.WriteLine("EndToEnd test completed.");
         }
 
         public class BiTranscript
