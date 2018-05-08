@@ -93,10 +93,10 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             transcriptStream.Start(ctx.Token);
             transcriptStream.Subscribe(transcript =>
             {
-                Console.WriteLine($"{transcript.TiForeignKey} - Received transcript: " + string.Join(' ', transcript));
-                if (!transcripts.TryAdd(transcript.TiForeignKey, transcript))
+                _output.WriteLine($"{transcript.CtiCallId} - Received transcript: " + string.Join(' ', transcript.Transcript));
+                if (!transcripts.TryAdd(transcript.CtiCallId, transcript))
                 {
-                    Console.WriteLine("Transcript couldn't be added.  It is likely a duplicate.  No harm.");
+                    _output.WriteLine("Transcript couldn't be added.  It is likely a duplicate.  No harm.");
                 }
             });
 
@@ -129,7 +129,7 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
 
         public class BiTranscript
         {
-            public string TiForeignKey { get; set; }
+            public string CtiCallId { get; set; }
             public string Transcript { get; set; }
         }
 

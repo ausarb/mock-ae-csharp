@@ -1,4 +1,4 @@
-﻿namespace Mattersight.mock.ba.ae.Domain.Ti
+﻿namespace Mattersight.mock.ba.ae.Domain.CTI
 {
     public class CallEvent
     {

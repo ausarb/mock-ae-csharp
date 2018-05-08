@@ -1,5 +1,5 @@
 using System;
-using Mattersight.mock.ba.ae.Domain.Ti;
+using Mattersight.mock.ba.ae.Domain.CTI;
 using Newtonsoft.Json;
 using Shouldly;
 using Xunit;

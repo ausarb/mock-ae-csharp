@@ -1,28 +1,27 @@
 ﻿using System;
 
-// ReSharper disable InconsistentNaming
 
 namespace Mattersight.mock.ba.ae.Domain.Calls
 {
-    public interface ICallMetaData
+    public interface ICallMetadata
     {
-        DateTime StartTime { get; }
-        DateTime EndTime { get; }
+        DateTime? StartTime { get; }
+        DateTime? EndTime { get; }
         string ANI { get; }
         string DNIS { get; }
-        string TiCallId { get; }
+        string CtiCallId { get; }
     }
 
-    public class CallMetaData : ICallMetaData
+    public class CallMetadata : ICallMetadata
     {
-        public DateTime StartTime { get; set; }
+        public DateTime? StartTime { get; set; }
 
-        public DateTime EndTime { get; set; }
+        public DateTime? EndTime { get; set; }
 
         public string ANI { get; set; }
 
         public string DNIS { get; set; }
 
-        public string TiCallId { get; set; }
+        public string CtiCallId { get; set; }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Mattersight.mock.ba.ae.Domain.Ti;
+using Mattersight.mock.ba.ae.Domain.Calls;
+using Mattersight.mock.ba.ae.Domain.CTI;
 using Mattersight.mock.ba.ae.Grains.Calls;
 using Mattersight.mock.ba.ae.Grains.Transcription;
 using Mattersight.mock.ba.ae.Serialization;
@@ -42,12 +43,12 @@ namespace Mattersight.mock.ba.ae.Tests.Grains.Calls.CallEventProcessingGrain
 
             "And a call with no start time set".x(() =>
             {
-                var callState = new CallState();
+                var callMetadata = new CallMetadata();
                 callGrain = new Mock<ICallGrain>();
-                callGrain.Setup(x => x.GetState()).Returns(Task.FromResult(callState));
+                callGrain.Setup(x => x.GetState()).Returns(Task.FromResult((ICallMetadata)callMetadata));
                 callGrain 
                     .Setup(x => x.SetEndDate(It.IsAny<DateTime>()))
-                    .Callback((DateTime x) => callState.EndDateTime = x)
+                    .Callback((DateTime x) => callMetadata.EndTime = x)
                     .Returns(Task.CompletedTask);
 
                 Silo.AddProbe(x => x.PrimaryKeyString == "foobar" ? callGrain : new Mock<ICallGrain>());
@@ -109,12 +110,12 @@ namespace Mattersight.mock.ba.ae.Tests.Grains.Calls.CallEventProcessingGrain
 
             "And a call with an already set start time".x(() =>
             {
-                var callState = new CallState { StartDateTime = DateTime.Now };
+                var callMetadata = new CallMetadata { StartTime = DateTime.Now };
                 callGrain = new Mock<ICallGrain>();
-                callGrain.Setup(x => x.GetState()).Returns(Task.FromResult(callState));
+                callGrain.Setup(x => x.GetState()).Returns(Task.FromResult((ICallMetadata)callMetadata));
                 callGrain 
                     .Setup(x => x.SetEndDate(It.IsAny<DateTime>()))
-                    .Callback((DateTime x) => callState.EndDateTime = x)
+                    .Callback((DateTime x) => callMetadata.EndTime = x)
                     .Returns(Task.CompletedTask);
 
                 Silo.AddProbe(x => x.PrimaryKeyString == "foobar" ? callGrain : new Mock<ICallGrain>());

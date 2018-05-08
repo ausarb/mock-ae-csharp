@@ -24,7 +24,7 @@ namespace Mattersight.mock.ba.ae.Domain.Transcription
             // https://www.infoworld.com/article/3212988/application-development/how-to-not-use-the-large-object-heap-in-net.html
             var json = JsonConvert.SerializeObject(new
             {
-                tiForeignKey = (await state.Call.GetState()).TiForeignKey,
+                ctiCallId = (await state.Call.GetState()).CtiCallId,
                 transcript = string.Join(' ', await state.Transcript.GetWords())
             });
 

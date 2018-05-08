@@ -55,7 +55,7 @@ namespace Mattersight.mock.ba.ae.Grains.Personality
             var callState = (await (await state).Call.GetState());
 
             var presonalityType = _personalityTypeDeterminer.DeterminePersonalityTypeFrom(await transcript.GetWords());
-            _logger.LogDebug($"Call {callState.TiForeignKey} was determined to have personality type {presonalityType}.");
+            _logger.LogDebug($"Call {callState.CtiCallId} was determined to have personality type {presonalityType}.");
             await _personalityTypeAvailable.OnNextAsync(presonalityType.ToString());
         }
 

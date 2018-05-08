@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Mattersight.mock.ba.ae.Domain.Ti;
+using Mattersight.mock.ba.ae.Domain.CTI;
 using Mattersight.mock.ba.ae.Grains.Transcription;
 using Mattersight.mock.ba.ae.Serialization;
 using Microsoft.Extensions.Logging;
@@ -45,7 +45,7 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
             var callEvent = _deserializer.Deserialize(item);
 
             var acdCallId = callEvent.AcdEvent.CallId;
-            var call = GrainFactory.GetGrain<ICallGrain>(acdCallId);  //For now, use acdCallId (aka TiCallId) for the call grain's ID.  Eventually this needs to change.
+            var call = GrainFactory.GetGrain<ICallGrain>(acdCallId);  //For now, use acdCallId (aka CtiCallId) for the call grain's ID.  Eventually this needs to change.
             await call.SetTiForeignKey(acdCallId);
             _logger.LogDebug($"acdCallId {acdCallId}: Received '{callEvent.AcdEvent.EventType}' event.");
 
@@ -63,7 +63,7 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
             }
 
             var callState = await call.GetState();
-            if (callState.StartDateTime == null || callState.EndDateTime == null)
+            if (callState.StartTime == null || callState.EndTime == null)
             {
                 _logger.LogDebug($"acdCallId {acdCallId}: Either call's start or end times are null.  Ignoring....");
                 return;

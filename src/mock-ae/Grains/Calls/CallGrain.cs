@@ -1,51 +1,44 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Mattersight.mock.ba.ae.Domain.Calls;
 using Orleans;
 using Orleans.Providers;
 
 namespace Mattersight.mock.ba.ae.Grains.Calls
 {
-    public class CallState
-    {
-        public DateTime? StartDateTime { get; set; }
-        public DateTime? EndDateTime { get; set; }
-        public string ANI { get; set; }
-        public string TiForeignKey { get; set; }
-    }
-
     public interface ICallGrain : IGrainWithStringKey
     {
-        Task SetTiForeignKey(string tiForeignKey);
+        Task SetTiForeignKey(string ctiCallId);
         Task SetStartDate(DateTime startDateTime);
         Task SetEndDate(DateTime endDateTime);
-        Task<CallState> GetState();
+        Task<ICallMetadata> GetState();
     }
 
     [StorageProvider(ProviderName = StorageProviders.CCA)]
-    public class CallGrain : Grain<CallState>, ICallGrain
+    public class CallGrain : Grain<CallMetadata>, ICallGrain
     {
-        public async Task SetTiForeignKey(string tiForeignKey)
+        public async Task SetTiForeignKey(string ctiCallId)
         {
-            State.TiForeignKey = tiForeignKey;
+            State.CtiCallId = ctiCallId;
             await WriteStateAsync();
         }
 
         //Have setters for the individual properties instead of allowing to set the entire state, which could lead to a race condition
         public async Task SetStartDate(DateTime startDateTime)
         {
-            State.StartDateTime = startDateTime;
+            State.StartTime = startDateTime;
             await WriteStateAsync();
         }
 
         public async Task SetEndDate(DateTime endDateTime)
         {
-            State.EndDateTime = endDateTime;
+            State.EndTime = endDateTime;
             await WriteStateAsync();
         }
 
-        public Task<CallState> GetState()
+        public Task<ICallMetadata> GetState()
         {
-            return Task.FromResult(State);
+            return Task.FromResult((ICallMetadata) State);
         }
     }
 }
