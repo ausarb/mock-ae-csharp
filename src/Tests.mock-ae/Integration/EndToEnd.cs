@@ -105,7 +105,7 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             });
 
             // Pretending to be an upstream producers, like TI.  Since AE doesn't serialize TI events, this test will have to do it.
-            var outputStream = new ProducingStream<string>(new QueueConfiguration {Name = "ti"}, connectionFactory, new StringSerializer());
+            var outputStream = new ProducingStream<string>(Mock.Of<ILogger<ProducingStream<string>>>(), new QueueConfiguration {Name = "ti"}, connectionFactory, new StringSerializer());
             outputStream.Start(ctx.Token);
 
             //Now to publish our own "ti" messages and record off anything published to us.

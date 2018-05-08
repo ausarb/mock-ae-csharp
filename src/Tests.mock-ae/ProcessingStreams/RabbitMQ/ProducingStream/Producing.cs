@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Mattersight.mock.ba.ae.ProcessingStreams.RabbitMQ;
 using Mattersight.mock.ba.ae.Serialization;
+using Microsoft.Extensions.Logging;
 using Moq;
 using RabbitMQ.Client;
 using Xbehave;
@@ -28,7 +29,7 @@ namespace Mattersight.mock.ba.ae.Tests.ProcessingStreams.RabbitMQ.ProducingStrea
 
                 var connection = Mock.Of<IConnection>(x => x.CreateModel() == channel);
                 var connectionFactory = Mock.Of<IConnectionFactory>(x => x.CreateConnection() == connection);
-                sut = new ProducingStream<object>(queueConfiguration, connectionFactory, serializer);
+                sut = new ProducingStream<object>(Mock.Of<ILogger<ProducingStream<object>>>(), queueConfiguration, connectionFactory, serializer);
                 sut.Start(CancellationToken.None);
             });
 
