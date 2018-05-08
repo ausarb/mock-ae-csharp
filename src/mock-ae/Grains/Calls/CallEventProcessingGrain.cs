@@ -16,7 +16,7 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
     }
 
     [StatelessWorker]
-    [ImplicitStreamSubscription(StreamNamespaces.TiProducedCallEvents)]
+    [ImplicitStreamSubscription(StreamNamespaces.CTiProducedCallEvents)]
     public class CallEventProcessingGrain : Grain, ICallEventProcessingGrain
     {
         private readonly ILogger<CallEventProcessingGrain> _logger;
@@ -33,7 +33,7 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
         {
             var guid = this.GetPrimaryKey();
             var streamProvider = GetStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider);
-            var stream = streamProvider.GetStream<byte[]>(guid, StreamNamespaces.TiProducedCallEvents);
+            var stream = streamProvider.GetStream<byte[]>(guid, StreamNamespaces.CTiProducedCallEvents);
             _callTranscriptAvailableStream = streamProvider.GetStream<ICallTranscriptGrain>(Guid.Empty, StreamNamespaces.CallTranscriptAvailable);
 
             await stream.SubscribeAsync(this);

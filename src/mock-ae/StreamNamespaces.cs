@@ -2,7 +2,7 @@
 {
     public static class StreamNamespaces
     {
-        public const string TiProducedCallEvents = "TI produced call events";
+        public const string CTiProducedCallEvents = "CTI produced call events";
         public const string CallTranscriptAvailable = "CallTranscriptAvailable";
         public const string PersonalityTypeAvailable = "PersonalityTypeAvailable";
     }
