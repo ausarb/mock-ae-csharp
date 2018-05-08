@@ -105,10 +105,10 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             outputStream.Start(ctx.Token);
 
             //Now to publish our own "ti" messages and record off anything published to us.
-            tiCallIds.ForEach(callId =>
+            tiCallIds.ForEach(async callId =>
             {
-                outputStream.OnNext(CreateBeginCallEvent(callId));
-                outputStream.OnNext(CreateEndCallEvent(callId));
+                await outputStream.OnNext(CreateBeginCallEvent(callId));
+                await outputStream.OnNext(CreateEndCallEvent(callId));
             });
 
             //Give some time for the transcript consumers to work.
