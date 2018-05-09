@@ -64,6 +64,8 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
         [Trait("Category", "integration")]
         public void Test()
         {
+            if (DateTime.Now != DateTime.MinValue)
+                throw new Exception("Bang.  Just testing failures.");
             var transcripts = new ConcurrentDictionary<string, BiTranscript>();
 
             var tiCallIds = new List<string>();
