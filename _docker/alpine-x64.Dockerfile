@@ -19,9 +19,7 @@ FROM build AS test
 WORKDIR /app/src/Tests.mock-ae
 ARG RABBIT_HOST_NAME
 ENV RABBIT_HOST_NAME=$RABBIT_HOST_NAME
-# Run tests, but "ignore" non-zero return codes.  This way, if a test fails, we'll still have access to the results file.  We'll therefore need to inspect it and fail if there are failed tests.
-RUN dotnet test --results-directory /results --logger "trx;LogFileName=test_results.xml"; exit 0
-
+RUN dotnet test --results-directory /results --logger "trx;LogFileName=test_results.xml"
 
 
 FROM build AS publish
