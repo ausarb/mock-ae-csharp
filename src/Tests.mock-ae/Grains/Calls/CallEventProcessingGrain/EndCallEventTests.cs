@@ -45,7 +45,7 @@ namespace Mattersight.mock.ba.ae.Tests.Grains.Calls.CallEventProcessingGrain
             {
                 var callMetadata = new CallMetadata();
                 callGrain = new Mock<ICallGrain>();
-                callGrain.Setup(x => x.GetState()).Returns(Task.FromResult((ICallMetadata)callMetadata));
+                callGrain.Setup(x => x.GetState()).Returns(Task.FromResult(callMetadata));
                 callGrain 
                     .Setup(x => x.SetEndDate(It.IsAny<DateTime>()))
                     .Callback((DateTime x) => callMetadata.EndTime = x)
@@ -112,7 +112,7 @@ namespace Mattersight.mock.ba.ae.Tests.Grains.Calls.CallEventProcessingGrain
             {
                 var callMetadata = new CallMetadata { StartTime = DateTime.Now };
                 callGrain = new Mock<ICallGrain>();
-                callGrain.Setup(x => x.GetState()).Returns(Task.FromResult((ICallMetadata)callMetadata));
+                callGrain.Setup(x => x.GetState()).Returns(Task.FromResult(callMetadata));
                 callGrain 
                     .Setup(x => x.SetEndDate(It.IsAny<DateTime>()))
                     .Callback((DateTime x) => callMetadata.EndTime = x)

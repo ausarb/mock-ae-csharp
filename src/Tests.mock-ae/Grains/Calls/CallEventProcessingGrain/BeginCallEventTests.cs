@@ -45,7 +45,7 @@ namespace Mattersight.mock.ba.ae.Tests.Grains.Calls.CallEventProcessingGrain
             {
                 var callMetadata = new CallMetadata();
                 callGrain = new Mock<ICallGrain>();
-                callGrain.Setup(x => x.GetState()).Returns(Task.FromResult((ICallMetadata)callMetadata));
+                callGrain.Setup(x => x.GetState()).Returns(Task.FromResult(callMetadata));
                 callGrain // We must set the call state's start time the the grain we're testing checks it to see if both start and end are set.
                     .Setup(x => x.SetStartDate(It.IsAny<DateTime>()))
                     .Callback((DateTime x) => callMetadata.StartTime = x)
@@ -112,7 +112,7 @@ namespace Mattersight.mock.ba.ae.Tests.Grains.Calls.CallEventProcessingGrain
             {
                 var callMetadata = new CallMetadata { EndTime = DateTime.Now };
                 callGrain = new Mock<ICallGrain>();
-                callGrain.Setup(x => x.GetState()).Returns(Task.FromResult((ICallMetadata)callMetadata));
+                callGrain.Setup(x => x.GetState()).Returns(Task.FromResult(callMetadata));
                 callGrain // We must set the call state's start time the the grain we're testing checks it to see if both start and end are set.
                     .Setup(x => x.SetStartDate(It.IsAny<DateTime>()))
                     .Callback((DateTime x) => callMetadata.StartTime = x)

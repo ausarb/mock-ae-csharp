@@ -11,7 +11,7 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
         Task SetTiForeignKey(string ctiCallId);
         Task SetStartDate(DateTime startDateTime);
         Task SetEndDate(DateTime endDateTime);
-        Task<ICallMetadata> GetState();
+        Task<CallMetadata> GetState();
     }
 
     [StorageProvider(ProviderName = StorageProviders.CCA)]
@@ -36,9 +36,9 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
             await WriteStateAsync();
         }
 
-        public Task<ICallMetadata> GetState()
+        public Task<CallMetadata> GetState()
         {
-            return Task.FromResult((ICallMetadata) State);
+            return Task.FromResult(State);
         }
     }
 }
