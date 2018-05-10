@@ -5,11 +5,15 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using Mattersight.mock.ba.ae.IoC;
 using Mattersight.mock.ba.ae.Serialization;
 using Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ;
+using Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ.v2;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Newtonsoft.Json;
+using Orleans.Runtime;
 using RabbitMQ.Client;
 using Shouldly;
 using Xunit;
@@ -88,10 +92,12 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             
             var wokerTask = Program.Main(ctx.Token);
 
+            var serviceProvider = new RabbitServices().BuildServiceProvider();
+
             // Pretending to be a downstream consumer, like BI
-            var transcriptStream = new StreamConsumer<BiTranscript>(Mock.Of<ILogger<StreamConsumer<BiTranscript>>>(), new QueueConfiguration {Name = "transcript"}, connectionFactory, new CallTranscriptDeserializer());
-            transcriptStream.Start(ctx.Token);
-            transcriptStream.Subscribe(transcript =>
+            var transcriptQueue = new QueueConsumer<BiTranscript>(Mock.Of<ILogger<QueueConsumer<BiTranscript>>>(), new QueueConfiguration { Name= "transcript"}, new CallTranscriptDeserializer());
+            transcriptQueue.Declare(serviceProvider.GetServiceByName<IConnection>(RabbitConnectionNames.Consumer));
+            transcriptQueue.Subscribe(transcript =>
             {
                 _output.WriteLine($"{transcript.CtiCallId} - Received transcript: " + string.Join(' ', transcript.Transcript));
                 if (!transcripts.TryAdd(transcript.CtiCallId, transcript))

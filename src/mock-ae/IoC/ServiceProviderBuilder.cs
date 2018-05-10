@@ -4,9 +4,9 @@ using Mattersight.mock.ba.ae.Grains.Transcription;
 using Mattersight.mock.ba.ae.Serialization;
 using Mattersight.mock.ba.ae.StreamProcessing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
-using RabbitMQ.Client;
 
 namespace Mattersight.mock.ba.ae.IoC
 {
@@ -17,15 +17,14 @@ namespace Mattersight.mock.ba.ae.IoC
             var services = new ServiceCollection();
 
             services.AddTransient<Program>();
-            services.AddSingleton<IConnectionFactory>(new ConnectionFactory
-            {
-                HostName = Environment.GetEnvironmentVariable("RABBIT_HOST_NAME") ?? "127.0.0.1",
-                Port = int.Parse(Environment.GetEnvironmentVariable("RABBIT_HOST_PORT") ?? AmqpTcpEndpoint.UseDefaultPort.ToString())
-            });
+
+            services.Add(new RabbitServices());
 
             // NoopDeserializer because the Orleans grain will do its own deserialization.  This isn't required, just "faster" at scale.
             services.AddSingleton<IDeserializer<byte[], byte[]>, NoopDeserializer<byte[]>>();
             services.AddSingleton<ISerializer<ICallTranscriptGrain, byte[]>, CallTranscriptSerializer>();
+
+            // When these are no longer needed, remove the IConnectinFactory registration from RabbitServices
             services.AddSingleton<ITiEventStreamConsumer, TiEventStreamConsumer>();
             services.AddSingleton<ITranscriptStreamProducer, TranscriptStreamProducer>();
 
