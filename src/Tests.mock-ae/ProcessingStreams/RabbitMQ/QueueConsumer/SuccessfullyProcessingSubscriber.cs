@@ -14,7 +14,7 @@ namespace Mattersight.mock.ba.ae.Tests.ProcessingStreams.RabbitMQ.QueueConsumer
     public class SuccessfullyProcessingSubscriber
     {
         [Scenario]
-        public void When_subscribers_event_proccesing_completes(StreamConsumer<object> sut, IBasicConsumer consumer, Mock<IModel> channel, ulong deliveryTag = 1234)
+        public void When_subscribers_event_proccesing_completes(QueueConsumer<object> sut, IBasicConsumer consumer, Mock<IModel> channel, ulong deliveryTag = 1234)
         {
             var ctx = new CancellationTokenSource();
             try
@@ -30,11 +30,9 @@ namespace Mattersight.mock.ba.ae.Tests.ProcessingStreams.RabbitMQ.QueueConsumer
                         .Returns("foo");
 
                     var connection = Mock.Of<IConnection>(x => x.CreateModel() == channel.Object);
-                    var connectionFactory = Mock.Of<IConnectionFactory>(x => x.CreateConnection() == connection);
 
                     var deserializer = Mock.Of<IDeserializer<byte[], object>>(x => x.Deserialize(It.IsAny<byte[]>()) == new object());
-                    sut = new StreamConsumer<object>(Mock.Of<ILogger<StreamConsumer<object>>>(), new QueueConfiguration(), connectionFactory, deserializer);
-                    sut.Start(CancellationToken.None);
+                    sut = new QueueConsumer<object>(Mock.Of<ILogger<QueueConsumer<object>>>(), connection, new QueueConfiguration(), deserializer);
                 });
 
                 "with a successfully processing subscriber"
