@@ -4,27 +4,31 @@ using Mattersight.mock.ba.ae.Serialization;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 
-namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ.v2
+namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ
 {
-    public class QueueProducer<TMessage> : IDisposable
+    public interface IQueueProducer<in TMessage> : IDisposable
     {
-        private IModel _channel;
+        /// <summary>
+        /// Publish a message
+        /// </summary>
+        Task OnNext(TMessage message);
+    }
 
-        private IBasicProperties _channelProperties;
+    public class QueueProducer<TMessage> : IQueueProducer<TMessage>
+    {
+        private readonly IModel _channel;
+        private readonly IBasicProperties _channelProperties;
 
-        private readonly ILogger<QueueConsumer<TMessage>> _logger;
         private readonly QueueConfiguration _config;
         private readonly ISerializer<TMessage, byte[]> _serializer;
 
-        public QueueProducer(ILogger<QueueConsumer<TMessage>> logger, QueueConfiguration config, ISerializer<TMessage, byte[]> serializer)
+        public QueueProducer(ILogger<QueueProducer<TMessage>> logger, IConnection connection, QueueConfiguration config, ISerializer<TMessage, byte[]> serializer)
         {
-            _logger = logger;
             _config = config;
             _serializer = serializer;
-        }
 
-        public void Create(IConnection connection)
-        {
+            // I'm not a fan of doing real work in a constructor, but the benefit outweighs the harm.  
+            // This way, the developer doesn't have ot know/remember to call a connect/declare method before using it.
             _channel = connection.CreateModel();
             var queue = _channel.QueueDeclare(_config.Name, durable: true, exclusive: false, autoDelete: _config.AutoDelete);
             _channel.BasicQos(prefetchSize: 0, prefetchCount: 300, global: false); // Only needed by the consumer side
@@ -32,7 +36,7 @@ namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ.v2
             _channelProperties = _channel.CreateBasicProperties();
             _channelProperties.Persistent = true; // marks the message itself as persistent or not.  So they will servive a Rabbit restart.
 
-            _logger.LogInformation($"Queue {queue.QueueName} declared.  There are currently {queue.MessageCount} messages waiting on the queue.");
+            logger.LogInformation($"Queue {config.Name} declared.");
         }
 
         /// <summary>

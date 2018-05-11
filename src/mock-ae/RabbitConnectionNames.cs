@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Mattersight.mock.ba.ae
+﻿namespace Mattersight.mock.ba.ae
 {
     public static class RabbitConnectionNames
     {

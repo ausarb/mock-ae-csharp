@@ -9,6 +9,7 @@ using Mattersight.mock.ba.ae.Grains.Transcription;
 using Mattersight.mock.ba.ae.IoC;
 using Mattersight.mock.ba.ae.Serialization;
 using Mattersight.mock.ba.ae.StreamProcessing;
+using Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
@@ -24,14 +25,14 @@ namespace Mattersight.mock.ba.ae
         public const string OrleansServiceId = "mock-ae-csharp";
 
         private readonly ILogger<Program> _logger;
-        private readonly ITiEventStreamConsumer _tiEventStreamConsumer;
-        private readonly ITranscriptStreamProducer _transcriptStreamProducer;
+        private readonly ITiEventQueueConsumer _tiEventQueueConsumer;
+        private readonly ITranscriptQueueProducer _transcriptQueueProducer;
 
-        public Program(ILogger<Program> logger, ITiEventStreamConsumer tiEventStreamConsumer, ITranscriptStreamProducer transcriptStreamProducer)
+        public Program(ILogger<Program> logger, ITiEventQueueConsumer tiEventQueueConsumer, ITranscriptQueueProducer transcriptQueueProducer)
         {
             _logger = logger;
-            _tiEventStreamConsumer = tiEventStreamConsumer;
-            _transcriptStreamProducer = transcriptStreamProducer;
+            _tiEventQueueConsumer = tiEventQueueConsumer;
+            _transcriptQueueProducer = transcriptQueueProducer;
         }
 
         public static void Main()
@@ -61,21 +62,6 @@ namespace Mattersight.mock.ba.ae
         {
             _logger.LogInformation($"Version = v{Assembly.GetExecutingAssembly().GetName().Version}.");
 
-            //Started is when the methods return, not when the tasks from them complete.  Their tasks will run for the life of the app.  The method returns when the streams are "started".
-            //Without the { } inside the Task.Run, it will grab the task returned by these method.  Those won't complete until the program ends.
-            var allStarted = Task
-                .WhenAll(
-                    // ReSharper disable ImplicitlyCapturedClosure
-                    Task.Run(() => { _tiEventStreamConsumer.Start(cancellationToken); }, cancellationToken),
-                    Task.Run(() => { _transcriptStreamProducer.Start(cancellationToken); }, cancellationToken))
-                    // ReSharper restore ImplicitlyCapturedClosure
-                .Wait(TimeSpan.FromMinutes(1));
-
-            if (!allStarted)
-            {
-                throw new Exception("At least one stream did not start within 1 minute.");
-            }
-
             var siloBuilder = new SiloHostBuilder()
                 .UseLocalhostClustering() // This is only for dev/POC/test where it a one silo cluster running on "localhost"
                 .Configure<ClusterOptions>(x =>
@@ -90,7 +76,7 @@ namespace Mattersight.mock.ba.ae
                 .ConfigureServices(x =>
                 {
                     // Any grain that wants to publish to a Rabbit queue/stream just asks for the following service
-                    x.AddSingleton<IStreamProducer<ICallTranscriptGrain>>(_transcriptStreamProducer);
+                    x.AddSingleton<IQueueProducer<ICallTranscriptGrain>>(_transcriptQueueProducer);
                     x.AddSingleton<IDeserializer<byte[], CallEvent>>(new ByteArrayEncodedJsonDeserializer<CallEvent>());
                     x.AddSingleton<IPersonalityTypeDeterminer, PersonalityTypeDeterminer>();
 
@@ -146,7 +132,7 @@ namespace Mattersight.mock.ba.ae
                     _logger.LogInformation($"Orleans client is connected.  orleansClient.IsInitialized={orleansClient.IsInitialized}.");
                     
                     // AE is what knows what to do with these streams.  Just start them and pass them to AE.
-                    new Ae(orleansClient, _tiEventStreamConsumer).Start(cancellationToken);
+                    new Ae(orleansClient, _tiEventQueueConsumer).Start(cancellationToken);
                         
                     initializationComplete.Set();
                     _logger.LogInformation("Startup complete.  Now waiting for cancellation token to be signaled.");

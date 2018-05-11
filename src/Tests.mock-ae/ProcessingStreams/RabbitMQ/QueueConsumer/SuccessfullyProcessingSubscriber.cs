@@ -9,7 +9,7 @@ using RabbitMQ.Client;
 using Xbehave;
 
 // ReSharper disable ImplicitlyCapturedClosure
-namespace Mattersight.mock.ba.ae.Tests.ProcessingStreams.RabbitMQ.ConsumingStream
+namespace Mattersight.mock.ba.ae.Tests.ProcessingStreams.RabbitMQ.QueueConsumer
 {
     public class SuccessfullyProcessingSubscriber
     {

@@ -4,25 +4,29 @@ using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
-namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ.v2
+namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ
 {
-    public class QueueConsumer<TMessage> : IDisposable
+    public interface IQueueConsumer<out TMessage> : IDisposable
     {
-        private IModel _channel;
+        void Subscribe(Action<TMessage> messageHandler);
+    }
+
+    public class QueueConsumer<TMessage> : IQueueConsumer<TMessage>
+    {
+        private readonly IModel _channel;
 
         private readonly ILogger<QueueConsumer<TMessage>> _logger;
         private readonly QueueConfiguration _config;
         private readonly IDeserializer<byte[], TMessage> _deserializer;
 
-        public QueueConsumer(ILogger<QueueConsumer<TMessage>> logger, QueueConfiguration config, IDeserializer<byte[], TMessage> deserializer)
+        public QueueConsumer(ILogger<QueueConsumer<TMessage>> logger, IConnection connection, QueueConfiguration config, IDeserializer<byte[], TMessage> deserializer)
         {
             _logger = logger;
             _config = config;
             _deserializer = deserializer;
-        }
 
-        public void Declare(IConnection connection)
-        {
+            // I'm not a fan of doing real work in a constructor, but the benefit outweighs the harm.  
+            // This way, the developer doesn't have ot know/remember to call a connect/declare method before using it.
             _channel = connection.CreateModel();
             var queue = _channel.QueueDeclare(_config.Name, durable: true, exclusive: false, autoDelete: _config.AutoDelete);
             _channel.BasicQos(prefetchSize: 0, prefetchCount: 300, global: false); // Only needed by the consumer side

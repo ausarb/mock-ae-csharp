@@ -76,7 +76,9 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
             await transcript.SetWords("blah blah blah".Split(" ").ToList());
             await callTranscriptGrain.SetState(call, transcript);
 
+            _logger.LogInformation($"acdCallId {acdCallId}: About to publish transcript to internal stream.");
             await _callTranscriptAvailableStream.OnNextAsync(callTranscriptGrain);
+            _logger.LogTrace($"acdCallId {acdCallId}: Published.");
         }
 
         public Task OnCompletedAsync()

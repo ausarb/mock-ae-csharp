@@ -8,12 +8,10 @@ using System.Threading;
 using Mattersight.mock.ba.ae.IoC;
 using Mattersight.mock.ba.ae.Serialization;
 using Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ;
-using Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ.v2;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Newtonsoft.Json;
-using Orleans.Runtime;
 using RabbitMQ.Client;
 using Shouldly;
 using Xunit;
@@ -89,14 +87,16 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             var ctx = new CancellationTokenSource();
 
             _output.WriteLine("Starting the \"application\".");
-            
+
+            // ************************************
+            // What we're testing:
             var wokerTask = Program.Main(ctx.Token);
+            // ************************************
 
             var serviceProvider = new RabbitServices().BuildServiceProvider();
 
             // Pretending to be a downstream consumer, like BI
-            var transcriptQueue = new QueueConsumer<BiTranscript>(Mock.Of<ILogger<QueueConsumer<BiTranscript>>>(), new QueueConfiguration { Name= "transcript"}, new CallTranscriptDeserializer());
-            transcriptQueue.Declare(serviceProvider.GetServiceByName<IConnection>(RabbitConnectionNames.Consumer));
+            var transcriptQueue = new QueueConsumer<BiTranscript>(Mock.Of<ILogger<QueueConsumer<BiTranscript>>>(), serviceProvider.GetService<IConnection>(), new QueueConfiguration { Name= "transcript"}, new CallTranscriptDeserializer());
             transcriptQueue.Subscribe(transcript =>
             {
                 _output.WriteLine($"{transcript.CtiCallId} - Received transcript: " + string.Join(' ', transcript.Transcript));
@@ -107,14 +107,15 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             });
 
             // Pretending to be an upstream producers, like TI.  Since AE doesn't serialize TI events, this test will have to do it.
-            var outputStream = new StreamProducer<string>(Mock.Of<ILogger<StreamProducer<string>>>(), new QueueConfiguration {Name = "ti"}, connectionFactory, new StringSerializer());
-            outputStream.Start(ctx.Token);
+            var ctiOutputQueue = new QueueProducer<string>(Mock.Of<ILogger<QueueProducer<string>>>(), connectionFactory.CreateConnection(), new QueueConfiguration { Name = "ti" }, new StringSerializer());
 
             //Now to publish our own "ti" messages and record off anything published to us.
+            //Uncomment the line below for manual troubleshooting so you're only dealing with two threads/events.
+            //tiCallIds = tiCallIds.Take(1).ToList();
             tiCallIds.ForEach(async callId =>
             {
-                await outputStream.OnNext(CreateBeginCallEvent(callId));
-                await outputStream.OnNext(CreateEndCallEvent(callId));
+                await ctiOutputQueue.OnNext(CreateBeginCallEvent(callId));
+                await ctiOutputQueue.OnNext(CreateEndCallEvent(callId));
             });
 
             //Give some time for the transcript consumers to work.

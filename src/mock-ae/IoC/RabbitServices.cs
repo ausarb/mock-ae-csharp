@@ -1,7 +1,5 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Orleans.Runtime;
 using RabbitMQ.Client;
 
 namespace Mattersight.mock.ba.ae.IoC
@@ -25,13 +23,10 @@ namespace Mattersight.mock.ba.ae.IoC
             // This can be removed once the legace Stream Producer/Consumers are removed.
             this.AddSingleton<IConnectionFactory>(connectionFactory);
 
-            // You must add the IKeyedServiceCollection in order to retrieve services via .GetServiceByName<TService>(name) since IT is the service that finds the named services.
-            this.TryAddSingleton(typeof(IKeyedServiceCollection<,>), typeof(KeyedServiceCollection<,>));
-
-            // Rabbit recommends 1 connection per producer and 1 connection per consumer.  Those connections will serve all of the exchanges/queues.
-            // The AddSingletonNamedService is an Orleans extension method and since it is a Func<IConnection> it won't run until the service is first requested.
-            this.AddSingletonNamedService(RabbitConnectionNames.Consumer, (p, s) => connectionFactory.CreateConnection());
-            this.AddSingletonNamedService(RabbitConnectionNames.Producer, (p, s) => connectionFactory.CreateConnection());
+            // Rabbit recommends 1 connection per producer and 1 connection per consumer.  
+            // This needs to be solved as this will mean just a single connection for everything.
+            // If you make this an AddTransient, then the connection will go out of scope shortly used and the connection will be closed.
+            this.AddSingleton(sp => connectionFactory.CreateConnection());
         }
     }
 }

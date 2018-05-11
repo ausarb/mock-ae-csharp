@@ -11,12 +11,12 @@ namespace Mattersight.mock.ba.ae
         private Task _worker;
 
         private readonly IClusterClient _orleansClient;
-        private readonly IStreamConsumer<byte[]> _incomingCallEventStream;
+        private readonly ITiEventQueueConsumer _incomingCallEventsConsumer;
 
-        public Ae(IClusterClient orleansClient, IStreamConsumer<byte[]> incomingCallEventStream)
+        public Ae(IClusterClient orleansClient, ITiEventQueueConsumer incomingCallEventsConsumer)
         {
             _orleansClient = orleansClient;
-            _incomingCallEventStream = incomingCallEventStream;
+            _incomingCallEventsConsumer = incomingCallEventsConsumer;
         }
 
         public Task Start(CancellationToken cancellationToken)
@@ -35,10 +35,12 @@ namespace Mattersight.mock.ba.ae
                     Console.WriteLine();
                     Console.WriteLine($"I'm going to spit out messages every {sleepPeriod.TotalSeconds} seconds.");
 
-                    // Chaing the Rabbit stream to the orleans stream
+                    // Chaining the Rabbit stream to the orleans stream
+                    // To find out who uses this, search for useages of the stream namespace associated with the orleansStream
                     var orleansStream = _orleansClient.GetStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider).GetStream<byte[]>(Guid.Empty, StreamNamespaces.CTiProducedCallEvents);
-                    _incomingCallEventStream.Subscribe(async x =>
+                    _incomingCallEventsConsumer.Subscribe(async x =>
                     {
+                        //Subscribe to the incoming RabbitStream and wroute those messages to the orleansProcessingStream
                         await orleansStream.OnNextAsync(x);
                     });
 

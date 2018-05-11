@@ -25,8 +25,8 @@ namespace Mattersight.mock.ba.ae.IoC
             services.AddSingleton<ISerializer<ICallTranscriptGrain, byte[]>, CallTranscriptSerializer>();
 
             // When these are no longer needed, remove the IConnectinFactory registration from RabbitServices
-            services.AddSingleton<ITiEventStreamConsumer, TiEventStreamConsumer>();
-            services.AddSingleton<ITranscriptStreamProducer, TranscriptStreamProducer>();
+            services.AddSingleton<ITiEventQueueConsumer, CtiEventQueueConsumer>();
+            services.AddSingleton<ITranscriptQueueProducer, TranscriptQueueProducer>();
 
             services.AddSingleton<ILoggerFactory, LoggerFactory>();
             services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
