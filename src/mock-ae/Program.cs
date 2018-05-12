@@ -3,14 +3,10 @@ using System.Net;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Mattersight.mock.ba.ae.Domain.CTI;
-using Mattersight.mock.ba.ae.Domain.Personality;
-using Mattersight.mock.ba.ae.Grains.Transcription;
 using Mattersight.mock.ba.ae.IoC;
-using Mattersight.mock.ba.ae.Serialization;
 using Mattersight.mock.ba.ae.StreamProcessing;
-using Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
 using Orleans;
@@ -25,14 +21,12 @@ namespace Mattersight.mock.ba.ae
         public const string OrleansServiceId = "mock-ae-csharp";
 
         private readonly ILogger<Program> _logger;
-        private readonly ITiEventQueueConsumer _tiEventQueueConsumer;
-        private readonly ITranscriptQueueProducer _transcriptQueueProducer;
+        private readonly ICtiEventQueueConsumer _tiEventQueueConsumer;
 
-        public Program(ILogger<Program> logger, ITiEventQueueConsumer tiEventQueueConsumer, ITranscriptQueueProducer transcriptQueueProducer)
+        public Program(ILogger<Program> logger, ICtiEventQueueConsumer tiEventQueueConsumer)
         {
             _logger = logger;
             _tiEventQueueConsumer = tiEventQueueConsumer;
-            _transcriptQueueProducer = transcriptQueueProducer;
         }
 
         public static void Main()
@@ -54,7 +48,7 @@ namespace Mattersight.mock.ba.ae
 
         public static Task Main(CancellationToken cancellationToken)
         {
-            var program = new ServiceProviderBuilder().Build().GetService<Program>();
+            var program = new Services().BuildServiceProvider().GetService<Program>();
             return program.Run(cancellationToken);
         }
 
@@ -75,18 +69,8 @@ namespace Mattersight.mock.ba.ae
                 })
                 .ConfigureServices(x =>
                 {
-                    // Any grain that wants to publish to a Rabbit queue/stream just asks for the following service
-                    x.AddSingleton<IQueueProducer<ICallTranscriptGrain>>(_transcriptQueueProducer);
-                    x.AddSingleton<IDeserializer<byte[], CallEvent>>(new ByteArrayEncodedJsonDeserializer<CallEvent>());
-                    x.AddSingleton<IPersonalityTypeDeterminer, PersonalityTypeDeterminer>();
-
-                    // .ConfigureLogging does not work, at least I can't get it to.  So wire it up manually.
-                    // Using the same config file as the "main program" will mean client and silo log messages are interwoven.  If you won't want this, you can use a different config file.
-                    x.AddSingleton(new LoggerFactory().AddNLog(new NLogProviderOptions { CaptureMessageTemplates = true, CaptureMessageProperties = true }));
-                    NLog.LogManager.LoadConfiguration("nlog.config");
+                    x.Add(new Services());
                 })
-
-                //.ConfigureLogging(x => x.AddConsole())
                 .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider)
                 .AddMemoryGrainStorage("PubSubStore") //This is requires for our message streams
                 .AddMemoryGrainStorage(StorageProviders.CCA);

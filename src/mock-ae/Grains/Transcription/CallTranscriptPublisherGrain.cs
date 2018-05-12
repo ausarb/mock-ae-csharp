@@ -21,9 +21,9 @@ namespace Mattersight.mock.ba.ae.Grains.Transcription
     public class CallTranscriptPublisherGrain : Grain, ICallTranscriptPublisherGrain
     {
         private readonly ILogger<CallTranscriptPublisherGrain> _logger;
-        private readonly IQueueProducer<ICallTranscriptGrain> _externalPublisher;
+        private readonly IExchangeProducer<ICallTranscriptGrain> _externalPublisher;
 
-        public CallTranscriptPublisherGrain(ILogger<CallTranscriptPublisherGrain> logger, IQueueProducer<ICallTranscriptGrain> externalPublisher)
+        public CallTranscriptPublisherGrain(ILogger<CallTranscriptPublisherGrain> logger, IExchangeProducer<ICallTranscriptGrain> externalPublisher)
         {
             _logger = logger;
             _externalPublisher = externalPublisher;
@@ -49,6 +49,7 @@ namespace Mattersight.mock.ba.ae.Grains.Transcription
             try
             {
                 await _externalPublisher.OnNext(transcript);
+                _logger.LogTrace("Published call transcript grain with identity {ICallTranscriptGrainIdentity}.", transcript.GetGrainIdentity());
             }
             catch (Exception e)
             {

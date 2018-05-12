@@ -30,13 +30,13 @@ namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ
             // I'm not a fan of doing real work in a constructor, but the benefit outweighs the harm.  
             // This way, the developer doesn't have ot know/remember to call a connect/declare method before using it.
             _channel = connection.CreateModel();
-            _channel.QueueDeclare(_config.Name, durable: true, exclusive: false, autoDelete: _config.AutoDelete);
+            _channel.QueueDeclare(_config.QueueName, durable: true, exclusive: false, autoDelete: _config.AutoDelete);
             _channel.BasicQos(prefetchSize: 0, prefetchCount: 300, global: false); // Only needed by the consumer side
 
             _channelProperties = _channel.CreateBasicProperties();
             _channelProperties.Persistent = true; // marks the message itself as persistent or not.  So they will servive a Rabbit restart.
 
-            logger.LogInformation($"Queue {config.Name} declared.");
+            logger.LogInformation($"Queue {config.QueueName} declared.");
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ
             {
                 _channel.BasicPublish(
                     exchange: "",
-                    routingKey: _config.Name,
+                    routingKey: _config.QueueName,
                     mandatory: false,
                     basicProperties: _channelProperties,
                     body: serializedMessage);

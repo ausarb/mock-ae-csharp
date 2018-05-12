@@ -11,9 +11,9 @@ namespace Mattersight.mock.ba.ae
         private Task _worker;
 
         private readonly IClusterClient _orleansClient;
-        private readonly ITiEventQueueConsumer _incomingCallEventsConsumer;
+        private readonly ICtiEventQueueConsumer _incomingCallEventsConsumer;
 
-        public Ae(IClusterClient orleansClient, ITiEventQueueConsumer incomingCallEventsConsumer)
+        public Ae(IClusterClient orleansClient, ICtiEventQueueConsumer incomingCallEventsConsumer)
         {
             _orleansClient = orleansClient;
             _incomingCallEventsConsumer = incomingCallEventsConsumer;

@@ -2,7 +2,7 @@
 {
     public class QueueConfiguration
     {
-        public string Name { get; set; }
+        public string QueueName { get; set; }
         public bool AutoDelete { get; set; }
     }
 }

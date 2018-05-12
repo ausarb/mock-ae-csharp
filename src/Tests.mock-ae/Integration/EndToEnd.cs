@@ -96,8 +96,9 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             var serviceProvider = new RabbitServices().BuildServiceProvider();
 
             // Pretending to be a downstream consumer, like BI
-            var transcriptQueue = new QueueConsumer<BiTranscript>(Mock.Of<ILogger<QueueConsumer<BiTranscript>>>(), serviceProvider.GetService<IConnection>(), new QueueConfiguration { Name= "transcript"}, new CallTranscriptDeserializer());
-            transcriptQueue.Subscribe(transcript =>
+            //var transcriptConsumer = new QueueConsumer<BiTranscript>(Mock.Of<ILogger<QueueConsumer<BiTranscript>>>(), serviceProvider.GetService<IConnection>(), new QueueConfiguration { QueueName= "transcript"}, new CallTranscriptDeserializer());
+            var transcriptConsumer = new ExchangeConsumer<BiTranscript>(Mock.Of<ILogger<ExchangeConsumer<BiTranscript>>>(), serviceProvider.GetService<IConnection>(), new ExchangeConfiguration { ExchangeName = RabbitExchangeNames.Transcripts}, new CallTranscriptDeserializer());
+            transcriptConsumer.Subscribe(transcript =>
             {
                 _output.WriteLine($"{transcript.CtiCallId} - Received transcript: " + string.Join(' ', transcript.Transcript));
                 if (!transcripts.TryAdd(transcript.CtiCallId, transcript))
@@ -107,7 +108,7 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             });
 
             // Pretending to be an upstream producers, like TI.  Since AE doesn't serialize TI events, this test will have to do it.
-            var ctiOutputQueue = new QueueProducer<string>(Mock.Of<ILogger<QueueProducer<string>>>(), connectionFactory.CreateConnection(), new QueueConfiguration { Name = "ti" }, new StringSerializer());
+            var ctiOutputQueue = new QueueProducer<string>(Mock.Of<ILogger<QueueProducer<string>>>(), connectionFactory.CreateConnection(), new QueueConfiguration { QueueName = "ti" }, new StringSerializer());
 
             //Now to publish our own "ti" messages and record off anything published to us.
             //Uncomment the line below for manual troubleshooting so you're only dealing with two threads/events.
