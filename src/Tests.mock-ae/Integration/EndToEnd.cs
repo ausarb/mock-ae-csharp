@@ -5,8 +5,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using Mattersight.mock.ba.ae.Grains.Transcription;
 using Mattersight.mock.ba.ae.IoC;
 using Mattersight.mock.ba.ae.Serialization;
+using Mattersight.mock.ba.ae.StreamProcessing;
 using Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -74,15 +76,18 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
                 tiCallIds.Add(Guid.NewGuid().ToString());
             }
 
-            var connectionFactory = new ConnectionFactory
-            {
-                //This environment variable will be passed in during the build proccess.  
-                //If it isn't there, we're likely running this on a developer's box so just default to loopback
-                HostName = Environment.GetEnvironmentVariable("RABBIT_HOST_NAME") ?? "127.0.0.1"
-            };
-
+            var rabbitServices = new RabbitServices().BuildServiceProvider();
+            var connectionFactory = rabbitServices.GetService<IConnectionFactory>();
+            
             var stopwatch = Stopwatch.StartNew();
-            _output.WriteLine($"Going to connect to {connectionFactory.Endpoint}.");
+            _output.WriteLine($"Going to connect to Rabbit at {(connectionFactory as ConnectionFactory)?.Endpoint.ToString() ?? "unknown"}.");
+
+            // Ensure that the exchange already exists.  This is unique to our test.  In a "real" case, the exchange would exist already.
+            using (var connection = connectionFactory.CreateConnection())
+            {
+                // ReSharper disable once ObjectCreationAsStatement
+                new TranscriptExchangeProducer(Mock.Of<ILogger<TranscriptExchangeProducer>>(), connection, Mock.Of<ISerializer<ICallTranscriptGrain, byte[]>>());
+            }
 
             var ctx = new CancellationTokenSource();
 
@@ -96,7 +101,6 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             var serviceProvider = new RabbitServices().BuildServiceProvider();
 
             // Pretending to be a downstream consumer, like BI
-            //var transcriptConsumer = new QueueConsumer<BiTranscript>(Mock.Of<ILogger<QueueConsumer<BiTranscript>>>(), serviceProvider.GetService<IConnection>(), new QueueConfiguration { QueueName= "transcript"}, new CallTranscriptDeserializer());
             var transcriptConsumer = new ExchangeConsumer<BiTranscript>(Mock.Of<ILogger<ExchangeConsumer<BiTranscript>>>(), serviceProvider.GetService<IConnection>(), new ExchangeConfiguration { ExchangeName = RabbitExchangeNames.Transcripts}, new CallTranscriptDeserializer());
             transcriptConsumer.Subscribe(transcript =>
             {
