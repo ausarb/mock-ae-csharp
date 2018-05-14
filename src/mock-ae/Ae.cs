@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Mattersight.mock.ba.ae.Orleans;
 using Mattersight.mock.ba.ae.StreamProcessing;
-using Orleans;
 
 namespace Mattersight.mock.ba.ae
 {
@@ -10,12 +10,12 @@ namespace Mattersight.mock.ba.ae
     {
         private Task _worker;
 
-        private readonly IClusterClient _orleansClient;
+        private readonly IClusterClientFactory _clusterClientFactory;
         private readonly ICtiEventQueueConsumer _incomingCallEventsConsumer;
 
-        public Ae(IClusterClient orleansClient, ICtiEventQueueConsumer incomingCallEventsConsumer)
+        public Ae(IClusterClientFactory clusterClientFactory, ICtiEventQueueConsumer incomingCallEventsConsumer)
         {
-            _orleansClient = orleansClient;
+            _clusterClientFactory = clusterClientFactory;
             _incomingCallEventsConsumer = incomingCallEventsConsumer;
         }
 
@@ -29,6 +29,8 @@ namespace Mattersight.mock.ba.ae
                     throw new InvalidOperationException("I've already been started.");
                 }
 
+                var orleansClusterClient = _clusterClientFactory.CreateConnectedClient(cancellationToken);
+
                 _worker = Task.Run(() =>
                 {
                     var sleepPeriod = TimeSpan.FromSeconds(10);
@@ -37,7 +39,7 @@ namespace Mattersight.mock.ba.ae
 
                     // Chaining the Rabbit stream to the orleans stream
                     // To find out who uses this, search for useages of the stream namespace associated with the orleansStream
-                    var orleansStream = _orleansClient.GetStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider).GetStream<byte[]>(Guid.Empty, StreamNamespaces.CTiProducedCallEvents);
+                    var orleansStream = orleansClusterClient.GetStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider).GetStream<byte[]>(Guid.Empty, StreamNamespaces.CTiProducedCallEvents);
                     _incomingCallEventsConsumer.Subscribe(async x =>
                     {
                         //Subscribe to the incoming RabbitStream and wroute those messages to the orleansProcessingStream

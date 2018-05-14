@@ -4,12 +4,9 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Mattersight.mock.ba.ae.IoC;
-using Mattersight.mock.ba.ae.StreamProcessing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using NLog.Extensions.Logging;
-using Orleans;
 using Orleans.Configuration;
 using Orleans.Hosting;
 
@@ -21,12 +18,12 @@ namespace Mattersight.mock.ba.ae
         public const string OrleansServiceId = "mock-ae-csharp";
 
         private readonly ILogger<Program> _logger;
-        private readonly ICtiEventQueueConsumer _tiEventQueueConsumer;
+        private readonly IServiceCollection _services;
 
-        public Program(ILogger<Program> logger, ICtiEventQueueConsumer tiEventQueueConsumer)
+        public Program()
         {
-            _logger = logger;
-            _tiEventQueueConsumer = tiEventQueueConsumer;
+            _services = new Services();
+            _logger = _services.BuildServiceProvider().GetService<ILogger<Program>>();
         }
 
         public static void Main()
@@ -75,55 +72,43 @@ namespace Mattersight.mock.ba.ae
                 .AddMemoryGrainStorage("PubSubStore") //This is requires for our message streams
                 .AddMemoryGrainStorage(StorageProviders.CCA);
 
-            //This task will run until the cancellation token is signaled.
+            
             var initializationComplete = new ManualResetEvent(false);
-            var task = Task.Run(() =>
+
+            //This task will run until the cancellation token is signaled.
+            var task = Task.Run(async () =>
             {
-                using (var silo = siloBuilder.Build())
+                try
                 {
-                    // ReSharper disable once MethodSupportsCancellation
-                    silo.StartAsync(cancellationToken).Wait();
-
-
-                    // Due to this issue https://github.com/dotnet/orleans/issues/4427, we can't use the retry function/delegate.  
-                    // We must recreate the client.
-                    IClusterClient orleansClient = null;
-                    while (true)
+                    using (var silo = siloBuilder.Build())
                     {
-                        try
+                        await silo.StartAsync(cancellationToken);
+                
+                        // AE is what knows what to do with these streams.  Just start them and pass them to AE.
+                        var serviceProvider = _services.BuildServiceProvider();
+                        var ae = serviceProvider.GetRequiredService<Ae>().Start(cancellationToken);
+
+                        initializationComplete.Set();
+                        _logger.LogInformation("Startup complete.  Now waiting for cancellation token to be signaled.");
+                        cancellationToken.WaitHandle.WaitOne();
+
+                        // Don't pass cancellation token to the StopAsync method because we're only here if the token has been cancelled.
+                        // ReSharper disable once MethodSupportsCancellation
+                        var siloShutdown = silo.StopAsync();
+                        var graceful = Task.WhenAll(siloShutdown, ae).Wait(TimeSpan.FromMinutes(1));
+                        if (!graceful)
                         {
-                            orleansClient = new ClientBuilder()
-                                .UseLocalhostClustering()
-                                .Configure<ClusterOptions>(x =>
-                                {
-                                    x.ClusterId = OrleansClusterId;
-                                    x.ServiceId = OrleansServiceId;
-                                })
-                                .ConfigureLogging(x => x.AddNLog()) //Just need to have this one line and it will hook into our logging we've already setup eariler.
-                                .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider)
-                                .Build();
-                            orleansClient.Connect().Wait(cancellationToken);
-                            break;
-                        }
-                        catch (Exception exception)
-                        {
-                            _logger.LogWarning(exception, "Exception while connecting to Orleans.  I will abandon the client and retry with a new one after a 3 second sleep");
-                            cancellationToken.WaitHandle.WaitOne(TimeSpan.FromSeconds(3));
-                            _logger.LogInformation("Waking up and retrying Orleans connection.");
+                            _logger.LogWarning("Everything didn't shut down gracefully within 60 seconds.  Terminating.");
+                            _logger.LogWarning($"AE status = {ae.Status}.");
+                            _logger.LogWarning($"Silo status = {silo.Stopped.Status}.");
                         }
                     }
-
-                    _logger.LogInformation($"Orleans client is connected.  orleansClient.IsInitialized={orleansClient.IsInitialized}.");
-                    
-                    // AE is what knows what to do with these streams.  Just start them and pass them to AE.
-                    new Ae(orleansClient, _tiEventQueueConsumer).Start(cancellationToken);
-                        
+                }
+                catch (Exception exception)
+                {
+                    // Set the initialization complete so that this task is returned and then a call of .Wait on it will result in this exception being seen/thrown.
                     initializationComplete.Set();
-                    _logger.LogInformation("Startup complete.  Now waiting for cancellation token to be signaled.");
-                    cancellationToken.WaitHandle.WaitOne();
-                    _logger.LogInformation("About to close the OrleansClient");
-                    orleansClient.Close().Wait(TimeSpan.FromSeconds(30));
-                    _logger.LogInformation("OrleansClient closed.");
+                    throw new Exception("Exception during initialization.", exception);
                 }
             }, cancellationToken);
 
@@ -131,7 +116,6 @@ namespace Mattersight.mock.ba.ae
             {
                 throw new Exception("Initialization didn't complete within 5 mintues.");
             }
-
             return task;
         }
     }

@@ -2,6 +2,7 @@
 using Mattersight.mock.ba.ae.Domain.Personality;
 using Mattersight.mock.ba.ae.Domain.Transcription;
 using Mattersight.mock.ba.ae.Grains.Transcription;
+using Mattersight.mock.ba.ae.Orleans;
 using Mattersight.mock.ba.ae.Serialization;
 using Mattersight.mock.ba.ae.StreamProcessing;
 using Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ;
@@ -19,6 +20,9 @@ namespace Mattersight.mock.ba.ae.IoC
             this.AddTransient<Program>();
 
             this.Add(new RabbitServices());
+            this.AddSingleton<ClusterConfiguration>();
+            this.AddSingleton<IClusterClientFactory, ClusterClientFactory>();
+            this.AddSingleton<Ae>();
 
             // NoopDeserializer because the Orleans grain will do its own deserialization.  This isn't required, just "faster" at scale.
             this.AddSingleton<IDeserializer<byte[], byte[]>, NoopDeserializer<byte[]>>();

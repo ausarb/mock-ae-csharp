@@ -93,11 +93,6 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
 
             _output.WriteLine("Starting the \"application\".");
 
-            // ************************************
-            // What we're testing:
-            var wokerTask = Program.Main(ctx.Token);
-            // ************************************
-
             var serviceProvider = new RabbitServices().BuildServiceProvider();
 
             // Pretending to be a downstream consumer, like BI
@@ -128,10 +123,13 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             _output.WriteLine($"{stopwatch.Elapsed.TotalSeconds} seconds: Going to wait 10 seconds and then cancel.");
             ctx.CancelAfter(TimeSpan.FromSeconds(10));
 
+            // **** What we're actually testsing ****
+            var wokerTask = Program.Main(ctx.Token);
+
             // Give it 50 seconds (60 second - the 10 seconds above before a shutdown is even requested) to end since we're now disconnecting the Orleans client gracefully.
             var workProcessEndedGracefully = wokerTask.Wait(TimeSpan.FromSeconds(60));
             _output.WriteLine($"{stopwatch.Elapsed.TotalSeconds} seconds: workerTask.Wait ended with {workProcessEndedGracefully}.");
-            workProcessEndedGracefully.ShouldBeTrue();
+            workProcessEndedGracefully.ShouldBeTrue("The main worker process did not end gracefully.");
 
             // We issued two events per call.  We should only have one transcript per tiCallIds though.
             transcripts.Count.ShouldBe(tiCallIds.Count, "There weren't as many transcriptions published as expected.");
