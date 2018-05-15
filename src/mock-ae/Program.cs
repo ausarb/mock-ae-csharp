@@ -1,154 +1,46 @@
-﻿using System;
-using System.Net;
-using System.Reflection;
+﻿using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
-using Mattersight.mock.ba.ae.Domain.CTI;
-using Mattersight.mock.ba.ae.Domain.Personality;
-using Mattersight.mock.ba.ae.Grains.Transcription;
 using Mattersight.mock.ba.ae.IoC;
-using Mattersight.mock.ba.ae.Serialization;
-using Mattersight.mock.ba.ae.StreamProcessing;
-using Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using NLog.Extensions.Logging;
-using Orleans;
-using Orleans.Configuration;
-using Orleans.Hosting;
+
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Tests.mock-ae")]
 
 namespace Mattersight.mock.ba.ae
 {
     public class Program
     {
-        public const string OrleansClusterId = "dev";
-        public const string OrleansServiceId = "mock-ae-csharp";
-
-        private readonly ILogger<Program> _logger;
-        private readonly ITiEventQueueConsumer _tiEventQueueConsumer;
-        private readonly ITranscriptQueueProducer _transcriptQueueProducer;
-
-        public Program(ILogger<Program> logger, ITiEventQueueConsumer tiEventQueueConsumer, ITranscriptQueueProducer transcriptQueueProducer)
-        {
-            _logger = logger;
-            _tiEventQueueConsumer = tiEventQueueConsumer;
-            _transcriptQueueProducer = transcriptQueueProducer;
-        }
+        private static readonly ManualResetEvent ShutdownComplete = new ManualResetEvent(false);
+        private static readonly CancellationTokenSource Ctx = new CancellationTokenSource();
+        private static ILogger<Program> _logger;
+        private static Task _workerTask;
 
         public static void Main()
         {
+            AssemblyLoadContext.Default.Unloading += ShutdownHandler;
+            var serviceProvider = new Services().BuildServiceProvider();
+            _logger = serviceProvider.GetService<ILogger<Program>>();
+            _workerTask = serviceProvider.GetService<Ae>().Start(Ctx.Token);
+            ShutdownComplete.WaitOne();
+        }
+
+        /// <summary>
+        /// This method is called via the assmebly unload event, which is triggerd when Docker shuts down a container
+        /// </summary>
+        private static void ShutdownHandler(AssemblyLoadContext context)
+        {
+            //https://stackoverflow.com/questions/40742192/how-to-do-gracefully-shutdown-on-dotnet-with-docker
             try
             {
-                Main(CancellationToken.None).Wait();
+                _logger.LogInformation("ShutdownHandler running.");
+                Ctx.Cancel();
+                _workerTask.Wait();
+                NLog.LogManager.Shutdown();
             }
-            finally
-            {
-                // This may should be moved to an AppDomain.OnUnload type of location.
-                try
-                {
-                    NLog.LogManager.Shutdown();
-                }
-                catch { /* Ignore */ }
-            }
-        }
+            catch { /* Ignore */ }
 
-        public static Task Main(CancellationToken cancellationToken)
-        {
-            var program = new ServiceProviderBuilder().Build().GetService<Program>();
-            return program.Run(cancellationToken);
-        }
-
-        public Task Run(CancellationToken cancellationToken)
-        {
-            _logger.LogInformation($"Version = v{Assembly.GetExecutingAssembly().GetName().Version}.");
-
-            var siloBuilder = new SiloHostBuilder()
-                .UseLocalhostClustering() // This is only for dev/POC/test where it a one silo cluster running on "localhost"
-                .Configure<ClusterOptions>(x =>
-                {
-                    x.ClusterId = OrleansClusterId;
-                    x.ServiceId = OrleansServiceId;
-                })
-                .Configure<EndpointOptions>(x =>
-                {
-                    x.AdvertisedIPAddress = IPAddress.Loopback;
-                })
-                .ConfigureServices(x =>
-                {
-                    // Any grain that wants to publish to a Rabbit queue/stream just asks for the following service
-                    x.AddSingleton<IQueueProducer<ICallTranscriptGrain>>(_transcriptQueueProducer);
-                    x.AddSingleton<IDeserializer<byte[], CallEvent>>(new ByteArrayEncodedJsonDeserializer<CallEvent>());
-                    x.AddSingleton<IPersonalityTypeDeterminer, PersonalityTypeDeterminer>();
-
-                    // .ConfigureLogging does not work, at least I can't get it to.  So wire it up manually.
-                    // Using the same config file as the "main program" will mean client and silo log messages are interwoven.  If you won't want this, you can use a different config file.
-                    x.AddSingleton(new LoggerFactory().AddNLog(new NLogProviderOptions { CaptureMessageTemplates = true, CaptureMessageProperties = true }));
-                    NLog.LogManager.LoadConfiguration("nlog.config");
-                })
-
-                //.ConfigureLogging(x => x.AddConsole())
-                .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider)
-                .AddMemoryGrainStorage("PubSubStore") //This is requires for our message streams
-                .AddMemoryGrainStorage(StorageProviders.CCA);
-
-            //This task will run until the cancellation token is signaled.
-            var initializationComplete = new ManualResetEvent(false);
-            var task = Task.Run(() =>
-            {
-                using (var silo = siloBuilder.Build())
-                {
-                    // ReSharper disable once MethodSupportsCancellation
-                    silo.StartAsync(cancellationToken).Wait();
-
-
-                    // Due to this issue https://github.com/dotnet/orleans/issues/4427, we can't use the retry function/delegate.  
-                    // We must recreate the client.
-                    IClusterClient orleansClient = null;
-                    while (true)
-                    {
-                        try
-                        {
-                            orleansClient = new ClientBuilder()
-                                .UseLocalhostClustering()
-                                .Configure<ClusterOptions>(x =>
-                                {
-                                    x.ClusterId = OrleansClusterId;
-                                    x.ServiceId = OrleansServiceId;
-                                })
-                                .ConfigureLogging(x => x.AddNLog()) //Just need to have this one line and it will hook into our logging we've already setup eariler.
-                                .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider)
-                                .Build();
-                            orleansClient.Connect().Wait(cancellationToken);
-                            break;
-                        }
-                        catch (Exception exception)
-                        {
-                            _logger.LogWarning(exception, "Exception while connecting to Orleans.  I will abandon the client and retry with a new one after a 3 second sleep");
-                            cancellationToken.WaitHandle.WaitOne(TimeSpan.FromSeconds(3));
-                            _logger.LogInformation("Waking up and retrying Orleans connection.");
-                        }
-                    }
-
-                    _logger.LogInformation($"Orleans client is connected.  orleansClient.IsInitialized={orleansClient.IsInitialized}.");
-                    
-                    // AE is what knows what to do with these streams.  Just start them and pass them to AE.
-                    new Ae(orleansClient, _tiEventQueueConsumer).Start(cancellationToken);
-                        
-                    initializationComplete.Set();
-                    _logger.LogInformation("Startup complete.  Now waiting for cancellation token to be signaled.");
-                    cancellationToken.WaitHandle.WaitOne();
-                    _logger.LogInformation("About to close the OrleansClient");
-                    orleansClient.Close().Wait(TimeSpan.FromSeconds(30));
-                    _logger.LogInformation("OrleansClient closed.");
-                }
-            }, cancellationToken);
-
-            if (!initializationComplete.WaitOne(TimeSpan.FromMinutes(5)))
-            {
-                throw new Exception("Initialization didn't complete within 5 mintues.");
-            }
-
-            return task;
+            ShutdownComplete.Set();
         }
     }
 }

@@ -5,8 +5,11 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
+using Mattersight.mock.ba.ae.Grains.Transcription;
 using Mattersight.mock.ba.ae.IoC;
 using Mattersight.mock.ba.ae.Serialization;
+using Mattersight.mock.ba.ae.StreamProcessing;
 using Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -74,30 +77,24 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
                 tiCallIds.Add(Guid.NewGuid().ToString());
             }
 
-            var connectionFactory = new ConnectionFactory
-            {
-                //This environment variable will be passed in during the build proccess.  
-                //If it isn't there, we're likely running this on a developer's box so just default to loopback
-                HostName = Environment.GetEnvironmentVariable("RABBIT_HOST_NAME") ?? "127.0.0.1"
-            };
-
+            var rabbitServices = new RabbitServices().BuildServiceProvider();
+            var connectionFactory = rabbitServices.GetService<IConnectionFactory>();
+            
             var stopwatch = Stopwatch.StartNew();
-            _output.WriteLine($"Going to connect to {connectionFactory.Endpoint}.");
+            _output.WriteLine($"Going to connect to Rabbit at {(connectionFactory as ConnectionFactory)?.Endpoint.ToString() ?? "unknown"}.");
 
-            var ctx = new CancellationTokenSource();
+            // Ensure that the exchange already exists.  This is unique to our test.  In a "real" case, the exchange would exist already.
+            using (var connection = connectionFactory.CreateConnection())
+            {
+                // ReSharper disable once ObjectCreationAsStatement
+                new TranscriptExchangeProducer(Mock.Of<ILogger<TranscriptExchangeProducer>>(), connection, Mock.Of<ISerializer<ICallTranscriptGrain, byte[]>>());
+            }
 
-            _output.WriteLine("Starting the \"application\".");
-
-            // ************************************
-            // What we're testing:
-            var wokerTask = Program.Main(ctx.Token);
-            // ************************************
-
-            var serviceProvider = new RabbitServices().BuildServiceProvider();
+            var serviceProvider = new Services().BuildServiceProvider();
 
             // Pretending to be a downstream consumer, like BI
-            var transcriptQueue = new QueueConsumer<BiTranscript>(Mock.Of<ILogger<QueueConsumer<BiTranscript>>>(), serviceProvider.GetService<IConnection>(), new QueueConfiguration { Name= "transcript"}, new CallTranscriptDeserializer());
-            transcriptQueue.Subscribe(transcript =>
+            var transcriptConsumer = new ExchangeConsumer<BiTranscript>(Mock.Of<ILogger<ExchangeConsumer<BiTranscript>>>(), serviceProvider.GetService<IConnection>(), new ExchangeConfiguration { ExchangeName = RabbitExchangeNames.Transcripts}, new CallTranscriptDeserializer());
+            transcriptConsumer.Subscribe(transcript =>
             {
                 _output.WriteLine($"{transcript.CtiCallId} - Received transcript: " + string.Join(' ', transcript.Transcript));
                 if (!transcripts.TryAdd(transcript.CtiCallId, transcript))
@@ -107,7 +104,7 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             });
 
             // Pretending to be an upstream producers, like TI.  Since AE doesn't serialize TI events, this test will have to do it.
-            var ctiOutputQueue = new QueueProducer<string>(Mock.Of<ILogger<QueueProducer<string>>>(), connectionFactory.CreateConnection(), new QueueConfiguration { Name = "ti" }, new StringSerializer());
+            var ctiOutputQueue = new QueueProducer<string>(Mock.Of<ILogger<QueueProducer<string>>>(), connectionFactory.CreateConnection(), new QueueConfiguration { QueueName = "ti" }, new StringSerializer());
 
             //Now to publish our own "ti" messages and record off anything published to us.
             //Uncomment the line below for manual troubleshooting so you're only dealing with two threads/events.
@@ -118,15 +115,19 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
                 await ctiOutputQueue.OnNext(CreateEndCallEvent(callId));
             });
 
-            //Give some time for the transcript consumers to work.
-            //_output.WriteLine($"{stopwatch.Elapsed.TotalSeconds} seconds: ");
-            _output.WriteLine($"{stopwatch.Elapsed.TotalSeconds} seconds: Going to wait 10 seconds and then cancel.");
-            ctx.CancelAfter(TimeSpan.FromSeconds(10));
 
+
+            // **** What we're actually testsing ****
+            var ctx = new CancellationTokenSource();
+            _output.WriteLine("Starting the \"application\".");
+            var sut = serviceProvider.GetService<Ae>();
+            ctx.CancelAfter(TimeSpan.FromSeconds(10)); // Give 10 seconds to allow transcript consumer to work.
+            var workerTask = sut.Start(ctx.Token);
+            
             // Give it 50 seconds (60 second - the 10 seconds above before a shutdown is even requested) to end since we're now disconnecting the Orleans client gracefully.
-            var workProcessEndedGracefully = wokerTask.Wait(TimeSpan.FromSeconds(60));
+            var workProcessEndedGracefully = workerTask.Wait(TimeSpan.FromSeconds(60));
             _output.WriteLine($"{stopwatch.Elapsed.TotalSeconds} seconds: workerTask.Wait ended with {workProcessEndedGracefully}.");
-            workProcessEndedGracefully.ShouldBeTrue();
+            workProcessEndedGracefully.ShouldBeTrue("The main worker process did not end gracefully.");
 
             // We issued two events per call.  We should only have one transcript per tiCallIds though.
             transcripts.Count.ShouldBe(tiCallIds.Count, "There weren't as many transcriptions published as expected.");

@@ -6,20 +6,21 @@ using RabbitMQ.Client.Events;
 
 namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ
 {
-    public interface IQueueConsumer<out TMessage> : IDisposable
+    public interface IExchangeConsumer<out TMessage> : IDisposable
     {
         void Subscribe(Action<TMessage> messageHandler);
     }
 
-    public class QueueConsumer<TMessage> : IQueueConsumer<TMessage>
+    public class ExchangeConsumer<TMessage> : IExchangeConsumer<TMessage>
     {
         private readonly IModel _channel;
 
-        private readonly ILogger<QueueConsumer<TMessage>> _logger;
-        private readonly QueueConfiguration _config;
+        private readonly ILogger<ExchangeConsumer<TMessage>> _logger;
+        private readonly ExchangeConfiguration _config;
+        private readonly string _queueName;
         private readonly IDeserializer<byte[], TMessage> _deserializer;
 
-        public QueueConsumer(ILogger<QueueConsumer<TMessage>> logger, IConnection connection, QueueConfiguration config, IDeserializer<byte[], TMessage> deserializer)
+        public ExchangeConsumer(ILogger<ExchangeConsumer<TMessage>> logger, IConnection connection, ExchangeConfiguration config, IDeserializer<byte[], TMessage> deserializer)
         {
             _logger = logger;
             _config = config;
@@ -28,10 +29,8 @@ namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ
             // I'm not a fan of doing real work in a constructor, but the benefit outweighs the harm.  
             // This way, the developer doesn't have ot know/remember to call a connect/declare method before using it.
             _channel = connection.CreateModel();
-            _channel.QueueDeclare(_config.QueueName, durable: true, exclusive: false, autoDelete: _config.AutoDelete);
-            _channel.BasicQos(prefetchSize: 0, prefetchCount: 300, global: false); // Only needed by the consumer side
-
-            _logger.LogInformation($"Queue {config.QueueName} declared.");
+            _queueName = _channel.QueueDeclare().QueueName;
+            _channel.QueueBind(queue: _queueName, exchange: config.ExchangeName, routingKey: "");
         }
 
         public void Subscribe(Action<TMessage> messageHandler)
@@ -39,21 +38,22 @@ namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ
             //We need to be able to inject this and the channel
             var consumer = new EventingBasicConsumer(_channel);
 
+            // The Ack/Nack are commented out because our first implementation will 
             consumer.Received += (model, eventArgs) =>
             {
                 try
                 {
                     var message = _deserializer.Deserialize(eventArgs.Body);
                     messageHandler(message);
-                    _channel.BasicAck(eventArgs.DeliveryTag, multiple: false);
+                    //_channel.BasicAck(eventArgs.DeliveryTag, multiple: false);
                 }
                 catch (Exception exception)
                 {
-                    _logger.LogWarning(exception, $"Unhandled exception thrown from messageHandler.  Message will be requeued.  QueueName={_config.QueueName}.");
-                    _channel.BasicNack(eventArgs.DeliveryTag, multiple: false, requeue: true);
+                    _logger.LogWarning(exception, $"Unhandled exception thrown from messageHandler.  Message will be requeued.  QueueName={_config.ExchangeName}.");
+                    //_channel.BasicNack(eventArgs.DeliveryTag, multiple: false, requeue: true);
                 }
             };
-            _channel.BasicConsume(_config.QueueName, autoAck: false, consumer: consumer);
+            _channel.BasicConsume(queue: _queueName, autoAck: true, consumer: consumer);
         }
 
 

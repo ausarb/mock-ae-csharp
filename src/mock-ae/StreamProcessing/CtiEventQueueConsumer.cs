@@ -5,14 +5,14 @@ using RabbitMQ.Client;
 
 namespace Mattersight.mock.ba.ae.StreamProcessing
 {
-    public interface ITiEventQueueConsumer : IQueueConsumer<byte[]>
+    public interface ICtiEventQueueConsumer : IQueueConsumer<byte[]>
     {
     }
 
-    public class CtiEventQueueConsumer : QueueConsumer<byte[]>, ITiEventQueueConsumer
+    public class CtiEventQueueConsumer : QueueConsumer<byte[]>, ICtiEventQueueConsumer
     {
         public CtiEventQueueConsumer(ILogger<CtiEventQueueConsumer> logger, IConnection connection, IDeserializer<byte[], byte[]> deserializer)
-        : base(logger, connection, new QueueConfiguration { Name = "ti" }, deserializer)
+        : base(logger, connection, new QueueConfiguration { QueueName = "ti" }, deserializer)
         {
 
         }

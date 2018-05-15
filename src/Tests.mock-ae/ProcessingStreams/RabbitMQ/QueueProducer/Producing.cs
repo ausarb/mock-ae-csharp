@@ -24,7 +24,7 @@ namespace Mattersight.mock.ba.ae.Tests.ProcessingStreams.RabbitMQ.QueueProducer
 
             "Given a producing stream".x(() =>
             {
-                queueConfiguration = new QueueConfiguration { Name = "The name of the queue goes here" };
+                queueConfiguration = new QueueConfiguration { QueueName = "The name of the queue goes here" };
 
                 var connection = Mock.Of<IConnection>(x => x.CreateModel() == channel);
                 sut = new QueueProducer<object>(Mock.Of<ILogger<QueueProducer<object>>>(), connection, queueConfiguration, serializer);
@@ -42,7 +42,7 @@ namespace Mattersight.mock.ba.ae.Tests.ProcessingStreams.RabbitMQ.QueueProducer
 
             "It should perform a BasicPublish with the seriazliedMessage".x(() =>
             {
-                Mock.Get(channel).Verify(x => x.BasicPublish("", queueConfiguration.Name, false, channelProperties, serializedMessage), Times.Once);
+                Mock.Get(channel).Verify(x => x.BasicPublish("", queueConfiguration.QueueName, false, channelProperties, serializedMessage), Times.Once);
             });
         }
     }
