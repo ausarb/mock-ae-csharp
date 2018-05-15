@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Reflection;
+using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
 using Mattersight.mock.ba.ae.IoC;
@@ -19,34 +20,43 @@ namespace Mattersight.mock.ba.ae
 
         private readonly ILogger<Program> _logger;
         private readonly IServiceCollection _services;
+        private readonly ManualResetEvent _shutdownComplete = new ManualResetEvent(false);
 
         public Program()
         {
+            AssemblyLoadContext.Default.Unloading += ShutdownHandler;
+
             _services = new Services();
             _logger = _services.BuildServiceProvider().GetService<ILogger<Program>>();
         }
 
         public static void Main()
         {
-            try
-            {
-                Main(CancellationToken.None).Wait();
-            }
-            finally
-            {
-                // This may should be moved to an AppDomain.OnUnload type of location.
-                try
-                {
-                    NLog.LogManager.Shutdown();
-                }
-                catch { /* Ignore */ }
-            }
+            new Program().Run(CancellationToken.None).Wait();
         }
 
-        public static Task Main(CancellationToken cancellationToken)
+        /// <summary>
+        /// Meant to be called only under exeptional circumstances, like unit testing.  The normal OS shutdown 
+        /// </summary>
+        public void Stop()
         {
-            var program = new Services().BuildServiceProvider().GetService<Program>();
-            return program.Run(cancellationToken);
+
+        }
+
+        /// <summary>
+        /// This method is called via the assmebly unload event, which is triggerd when Docker shuts down a container
+        /// </summary>
+        private void ShutdownHandler(AssemblyLoadContext context)
+        {
+            //https://stackoverflow.com/questions/40742192/how-to-do-gracefully-shutdown-on-dotnet-with-docker
+            try
+            {
+                _logger.LogInformation("ShutdownHandler running.");
+                NLog.LogManager.Shutdown();
+            }
+            catch { /* Ignore */ }
+
+            _shutdownComplete.Set();
         }
 
         public Task Run(CancellationToken cancellationToken)
@@ -83,7 +93,7 @@ namespace Mattersight.mock.ba.ae
                     using (var silo = siloBuilder.Build())
                     {
                         await silo.StartAsync(cancellationToken);
-                
+
                         // AE is what knows what to do with these streams.  Just start them and pass them to AE.
                         var serviceProvider = _services.BuildServiceProvider();
                         var ae = serviceProvider.GetRequiredService<Ae>().Start(cancellationToken);
@@ -98,7 +108,8 @@ namespace Mattersight.mock.ba.ae
                         var graceful = Task.WhenAll(siloShutdown, ae).Wait(TimeSpan.FromMinutes(1));
                         if (!graceful)
                         {
-                            _logger.LogWarning("Everything didn't shut down gracefully within 60 seconds.  Terminating.");
+                            _logger.LogWarning(
+                                "Everything didn't shut down gracefully within 60 seconds.  Terminating.");
                             _logger.LogWarning($"AE status = {ae.Status}.");
                             _logger.LogWarning($"Silo status = {silo.Stopped.Status}.");
                         }

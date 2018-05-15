@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using Mattersight.mock.ba.ae.Grains.Transcription;
 using Mattersight.mock.ba.ae.IoC;
 using Mattersight.mock.ba.ae.Serialization;
@@ -119,12 +120,11 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             });
 
             //Give some time for the transcript consumers to work.
-            //_output.WriteLine($"{stopwatch.Elapsed.TotalSeconds} seconds: ");
             _output.WriteLine($"{stopwatch.Elapsed.TotalSeconds} seconds: Going to wait 10 seconds and then cancel.");
             ctx.CancelAfter(TimeSpan.FromSeconds(10));
 
             // **** What we're actually testsing ****
-            var wokerTask = Program.Main(ctx.Token);
+            var wokerTask = new Program().Run(ctx.Token);
 
             // Give it 50 seconds (60 second - the 10 seconds above before a shutdown is even requested) to end since we're now disconnecting the Orleans client gracefully.
             var workProcessEndedGracefully = wokerTask.Wait(TimeSpan.FromSeconds(60));
