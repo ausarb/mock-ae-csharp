@@ -90,11 +90,7 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
                 new TranscriptExchangeProducer(Mock.Of<ILogger<TranscriptExchangeProducer>>(), connection, Mock.Of<ISerializer<ICallTranscriptGrain, byte[]>>());
             }
 
-            var ctx = new CancellationTokenSource();
-
-            _output.WriteLine("Starting the \"application\".");
-
-            var serviceProvider = new RabbitServices().BuildServiceProvider();
+            var serviceProvider = new Services().BuildServiceProvider();
 
             // Pretending to be a downstream consumer, like BI
             var transcriptConsumer = new ExchangeConsumer<BiTranscript>(Mock.Of<ILogger<ExchangeConsumer<BiTranscript>>>(), serviceProvider.GetService<IConnection>(), new ExchangeConfiguration { ExchangeName = RabbitExchangeNames.Transcripts}, new CallTranscriptDeserializer());
@@ -119,15 +115,17 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
                 await ctiOutputQueue.OnNext(CreateEndCallEvent(callId));
             });
 
-            //Give some time for the transcript consumers to work.
-            _output.WriteLine($"{stopwatch.Elapsed.TotalSeconds} seconds: Going to wait 10 seconds and then cancel.");
-            ctx.CancelAfter(TimeSpan.FromSeconds(10));
+
 
             // **** What we're actually testsing ****
-            var wokerTask = new Program().Run(ctx.Token);
-
+            var ctx = new CancellationTokenSource();
+            _output.WriteLine("Starting the \"application\".");
+            var sut = serviceProvider.GetService<Ae>();
+            ctx.CancelAfter(TimeSpan.FromSeconds(10)); // Give 10 seconds to allow transcript consumer to work.
+            var workerTask = sut.Start(ctx.Token);
+            
             // Give it 50 seconds (60 second - the 10 seconds above before a shutdown is even requested) to end since we're now disconnecting the Orleans client gracefully.
-            var workProcessEndedGracefully = wokerTask.Wait(TimeSpan.FromSeconds(60));
+            var workProcessEndedGracefully = workerTask.Wait(TimeSpan.FromSeconds(60));
             _output.WriteLine($"{stopwatch.Elapsed.TotalSeconds} seconds: workerTask.Wait ended with {workProcessEndedGracefully}.");
             workProcessEndedGracefully.ShouldBeTrue("The main worker process did not end gracefully.");
 

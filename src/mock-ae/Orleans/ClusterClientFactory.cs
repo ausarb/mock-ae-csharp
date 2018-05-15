@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NLog.Extensions.Logging;
 using Orleans;
@@ -10,7 +11,7 @@ namespace Mattersight.mock.ba.ae.Orleans
 {
     public interface IClusterClientFactory
     {
-        IClusterClient CreateConnectedClient(CancellationToken cancellationToken);
+        Task<IClusterClient> CreateConnectedClient(CancellationToken cancellationToken);
     }
 
     public class ClusterClientFactory : IClusterClientFactory
@@ -24,7 +25,7 @@ namespace Mattersight.mock.ba.ae.Orleans
             _config = config;
         }
 
-        public IClusterClient CreateConnectedClient(CancellationToken cancellationToken)
+        public async Task<IClusterClient> CreateConnectedClient(CancellationToken cancellationToken)
         {
             // Due to this issue https://github.com/dotnet/orleans/issues/4427, we can't use the retry function/delegate.  
             // We must recreate the client.
@@ -42,7 +43,7 @@ namespace Mattersight.mock.ba.ae.Orleans
                         .ConfigureLogging(x => x.AddNLog()) //Just need to have this one line and it will hook into our logging we've already setup eariler.
                         .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider)
                         .Build();
-                    orleansClient.Connect().Wait(cancellationToken);
+                    await orleansClient.Connect();
                     return orleansClient;
                 }
                 catch (Exception exception)

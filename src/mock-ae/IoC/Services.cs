@@ -22,6 +22,7 @@ namespace Mattersight.mock.ba.ae.IoC
             this.Add(new RabbitServices());
             this.AddSingleton<ClusterConfiguration>();
             this.AddSingleton<IClusterClientFactory, ClusterClientFactory>();
+            this.AddSingleton<ISiloFactory, SiloFactory>();
             this.AddSingleton<Ae>();
 
             // NoopDeserializer because the Orleans grain will do its own deserialization.  This isn't required, just "faster" at scale.
