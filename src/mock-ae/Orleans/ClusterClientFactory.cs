@@ -16,10 +16,10 @@ namespace Mattersight.mock.ba.ae.Orleans
 
     public class ClusterClientFactory : IClusterClientFactory
     {
-        private readonly ILogger<ClusterConfiguration> _logger;
+        private readonly ILogger<ClusterClientFactory> _logger;
         private readonly ClusterConfiguration _config;
 
-        public ClusterClientFactory(ILogger<ClusterConfiguration> logger, ClusterConfiguration config)
+        public ClusterClientFactory(ILogger<ClusterClientFactory> logger, ClusterConfiguration config)
         {
             _logger = logger;
             _config = config;
@@ -44,6 +44,7 @@ namespace Mattersight.mock.ba.ae.Orleans
                         .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider)
                         .Build();
                     await orleansClient.Connect();
+                    _logger.LogInformation("Cluster client connected.");
                     return orleansClient;
                 }
                 catch (Exception exception)
