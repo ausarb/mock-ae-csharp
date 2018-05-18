@@ -3,7 +3,6 @@ using Mattersight.mock.ba.ae.Serialization;
 using Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
-using ExchangeType = Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ.ExchangeType;
 
 namespace Mattersight.mock.ba.ae.StreamProcessing
 {
@@ -13,8 +12,14 @@ namespace Mattersight.mock.ba.ae.StreamProcessing
 
     public class TranscriptExchangeProducer : ExchangeProducer<ICallTranscriptGrain>, ITranscriptExchangeProducer
     {
+        private static readonly ExchangeConfiguration Config = new ExchangeConfiguration
+        {
+            ExchangeName = RabbitExchangeNames.CallTranscripts,
+            ExchangeType = ExchangeType.Fanout
+        };
+
         public TranscriptExchangeProducer(ILogger<TranscriptExchangeProducer> logger, IConnection connection, ISerializer<ICallTranscriptGrain, byte[]> serializer) 
-            : base(logger, connection, new ExchangeConfiguration { ExchangeName = RabbitExchangeNames.Transcripts, ExchangeType = ExchangeType.Fanout }, serializer)
+            : base(logger, connection, Config, serializer)
         {
         }
     }

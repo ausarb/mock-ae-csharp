@@ -48,7 +48,7 @@ namespace Mattersight.mock.ba.ae.Grains.Transcription
 
             try
             {
-                await _externalPublisher.OnNext(transcript);
+                await _externalPublisher.OnNext(transcript, "");
                 _logger.LogTrace("Published call transcript grain with identity {ICallTranscriptGrainIdentity}.", transcript.GetGrainIdentity());
             }
             catch (Exception e)

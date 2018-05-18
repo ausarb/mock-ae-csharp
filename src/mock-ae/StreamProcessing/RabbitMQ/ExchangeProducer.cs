@@ -4,11 +4,12 @@ using Mattersight.mock.ba.ae.Serialization;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 
+// ReSharper disable RedundantArgumentDefaultValue
 namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ
 {
     public interface IExchangeProducer<in TMessage> : IDisposable
     {
-        Task OnNext(TMessage message);
+        Task OnNext(TMessage message, string routingKey);
     }
 
     public class ExchangeProducer<TMessage> : IExchangeProducer<TMessage>
@@ -30,11 +31,11 @@ namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ
             logger.LogInformation($"Exchange \"{config.ExchangeName}\" declared as type {config.ExchangeType}.");
         }
 
-        public async Task OnNext(TMessage message)
+        public async Task OnNext(TMessage message, string routingKey)
         {
             var serializedMessage = await _serializer.Serialize(message);
 
-            _channel.BasicPublish(exchange: _config.ExchangeName , routingKey: "", basicProperties: null, body: serializedMessage);
+            _channel.BasicPublish(exchange: _config.ExchangeName, routingKey: routingKey, basicProperties: null, body: serializedMessage);
         }
 
         public void Dispose()

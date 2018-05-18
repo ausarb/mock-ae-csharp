@@ -93,7 +93,7 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             var serviceProvider = new Services().BuildServiceProvider();
 
             // Pretending to be a downstream consumer, like BI
-            var transcriptConsumer = new ExchangeConsumer<BiTranscript>(Mock.Of<ILogger<ExchangeConsumer<BiTranscript>>>(), serviceProvider.GetService<IConnection>(), new ExchangeConfiguration { ExchangeName = RabbitExchangeNames.Transcripts}, new CallTranscriptDeserializer());
+            var transcriptConsumer = new ExchangeConsumer<BiTranscript>(Mock.Of<ILogger<ExchangeConsumer<BiTranscript>>>(), serviceProvider.GetService<IConnection>(), new ExchangeConfiguration { ExchangeName = RabbitExchangeNames.CallTranscripts}, new CallTranscriptDeserializer());
             transcriptConsumer.Subscribe(transcript =>
             {
                 _output.WriteLine($"{transcript.CtiCallId} - Received transcript: " + string.Join(' ', transcript.Transcript));

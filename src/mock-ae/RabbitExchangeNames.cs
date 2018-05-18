@@ -2,6 +2,7 @@
 {
     public static class RabbitExchangeNames
     {
-        public const string Transcripts = "transcripts";
+        public const string CallTranscripts = "calltranscripts";
+        public const string CallTranscriptRepublish = "calltranscripts.republish";
     }
 }
