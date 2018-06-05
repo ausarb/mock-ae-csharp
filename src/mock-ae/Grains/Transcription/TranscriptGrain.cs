@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Orleans;
 using Orleans.Providers;
@@ -23,6 +24,14 @@ namespace Mattersight.mock.ba.ae.Grains.Transcription
     [StorageProvider(ProviderName = StorageProviders.CCA)]
     public class TranscriptGrain : Grain<TranscriptState>, ITranscriptGrain
     {
+        protected override Task ReadStateAsync()
+        {
+            // Eventually this will use a repository to load from the DB or whereever else the transcript will reside.
+            State.Words = "This is a transcript that has been loaded from the database.  Just kidding.  It's totally fake."
+                .Split(" ",StringSplitOptions.RemoveEmptyEntries);
+            return Task.CompletedTask;
+        }
+
         public async Task SetWords(IList<string> words)
         {
             State.Words = words;

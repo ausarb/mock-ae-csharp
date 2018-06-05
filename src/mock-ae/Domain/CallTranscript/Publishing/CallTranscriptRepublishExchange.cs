@@ -11,11 +11,11 @@ namespace Mattersight.mock.ba.ae.Domain.CallTranscript.Publishing
 
     }
 
-    public class CallTranscriptRepublishExchange : ExchangeProducer<ICallTranscriptGrain>
+    public class CallTranscriptRepublishExchange : ExchangeProducer<ICallTranscriptGrain>, ICallTranscriptRepublishExchange
     {
         private static readonly ExchangeConfiguration Config = new ExchangeConfiguration
         {
-            ExchangeType = ExchangeType.Fanout,
+            ExchangeType = ExchangeType.Direct,
             ExchangeName = RabbitExchangeNames.CallTranscriptRepublish
         };
 
