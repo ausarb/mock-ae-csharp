@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Mattersight.mock.ba.ae.Grains.Transcription;
 using Orleans;
 using Orleans.Concurrency;
 using Orleans.Streams;
 
-namespace Mattersight.mock.ba.ae.Grains.Transcription
+namespace Mattersight.mock.ba.ae.Domain.CallTranscript.Publishing
 {
     public interface ICallTranscriptRepublisherGrain : IGrainWithGuidKey, IAsyncObserver<CallTranscriptRepublishRequest>
     {
@@ -13,11 +14,11 @@ namespace Mattersight.mock.ba.ae.Grains.Transcription
 
     [StatelessWorker]
     [ImplicitStreamSubscription(StreamNamespaces.CallTranscriptRepublicationRequest)]
-    public class CallTranscriptRepublisherGrain : Grain, ICallTranscriptRepublisherGrain
+    public class CallTranscriptRepublishGrain : Grain, ICallTranscriptRepublisherGrain
     {
         private readonly ICallTranscriptRepublishExchange _callTranscriptRepublishExchange;
 
-        public CallTranscriptRepublisherGrain(ICallTranscriptRepublishExchange callTranscriptRepublishExchange)
+        public CallTranscriptRepublishGrain(ICallTranscriptRepublishExchange callTranscriptRepublishExchange)
         {
             _callTranscriptRepublishExchange = callTranscriptRepublishExchange;
         }

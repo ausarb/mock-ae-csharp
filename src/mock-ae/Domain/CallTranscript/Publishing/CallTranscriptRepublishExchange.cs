@@ -1,9 +1,10 @@
-﻿using Mattersight.mock.ba.ae.Serialization;
+﻿using Mattersight.mock.ba.ae.Grains.Transcription;
+using Mattersight.mock.ba.ae.Serialization;
 using Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 
-namespace Mattersight.mock.ba.ae.Grains.Transcription
+namespace Mattersight.mock.ba.ae.Domain.CallTranscript.Publishing
 {
     public interface ICallTranscriptRepublishExchange : IExchangeProducer<ICallTranscriptGrain>
     {

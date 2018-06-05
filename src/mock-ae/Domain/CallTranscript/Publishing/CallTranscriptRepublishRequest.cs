@@ -1,4 +1,4 @@
-﻿namespace Mattersight.mock.ba.ae.Grains.Transcription
+﻿namespace Mattersight.mock.ba.ae.Domain.CallTranscript.Publishing
 {
     public class CallTranscriptRepublishRequest
     {
