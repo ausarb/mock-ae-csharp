@@ -54,7 +54,7 @@ namespace Mattersight.mock.ba.ae.Grains.Transcription
                     {"callId", (await state.Call.GetState()).CtiCallId},
                     {"transcript", await state.Transcript.GetTranscript() }
                 };
-                await _externalPublisher.OnNext(payload, "");
+                await _externalPublisher.Publish(payload, "");
                 _logger.LogTrace("Published call transcript grain with identity {ICallTranscriptGrainIdentity}.", transcript.GetGrainIdentity());
             }
             catch (Exception e)

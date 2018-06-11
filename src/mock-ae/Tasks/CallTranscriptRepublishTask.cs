@@ -53,7 +53,7 @@ namespace Mattersight.mock.ba.ae.Tasks
                                     {"transcript", transcript}
                                 };
 
-                                await _transcriptRepublishExchange.OnNext(message, request.RoutingKey);
+                                await _transcriptRepublishExchange.Publish(message, request.RoutingKey);
 
                                 // ReSharper disable once AccessToDisposedClosure
                                 channel.BasicAck(ea.DeliveryTag, false);

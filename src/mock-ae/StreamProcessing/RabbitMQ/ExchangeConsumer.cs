@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
 using Mattersight.mock.ba.ae.Serialization;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;

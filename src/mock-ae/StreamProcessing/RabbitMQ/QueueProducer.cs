@@ -11,7 +11,7 @@ namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ
         /// <summary>
         /// Publish a message
         /// </summary>
-        Task OnNext(TMessage message);
+        Task Publish(TMessage message);
     }
 
     public class QueueProducer<TMessage> : IQueueProducer<TMessage>
@@ -31,7 +31,6 @@ namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ
             // This way, the developer doesn't have ot know/remember to call a connect/declare method before using it.
             _channel = connection.CreateModel();
             _channel.QueueDeclare(_config.QueueName, durable: true, exclusive: false, autoDelete: _config.AutoDelete);
-            _channel.BasicQos(prefetchSize: 0, prefetchCount: 300, global: false); // Only needed by the consumer side
 
             _channelProperties = _channel.CreateBasicProperties();
             _channelProperties.Persistent = true; // marks the message itself as persistent or not.  So they will servive a Rabbit restart.
@@ -42,7 +41,7 @@ namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ
         /// <summary>
         /// Publish a message
         /// </summary>
-        public async Task OnNext(TMessage message)
+        public async Task Publish(TMessage message)
         {
             var serializedMessage = await _serializer.Serialize(message);
 

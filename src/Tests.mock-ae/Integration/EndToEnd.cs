@@ -111,6 +111,7 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             });
 
             // Pretending to be an upstream producers, like TI.  Since AE doesn't serialize TI events, this test will have to do it.
+            // In the real world, this would be published to an exchange and AE would be only one or potentially many subscribers.
             var ctiOutputQueue = new QueueProducer<string>(Mock.Of<ILogger<QueueProducer<string>>>(), connectionFactory.CreateConnection(), new QueueConfiguration { QueueName = "ti" }, new StringSerializer());
 
             //Now to publish our own "ti" messages and record off anything published to us.
@@ -118,8 +119,8 @@ namespace Mattersight.mock.ba.ae.Tests.Integration
             //tiCallIds = tiCallIds.Take(1).ToList();
             tiCallIds.ForEach(async callId =>
             {
-                await ctiOutputQueue.OnNext(CreateBeginCallEvent(callId));
-                await ctiOutputQueue.OnNext(CreateEndCallEvent(callId));
+                await ctiOutputQueue.Publish(CreateBeginCallEvent(callId));
+                await ctiOutputQueue.Publish(CreateEndCallEvent(callId));
             });
 
 

@@ -30,9 +30,9 @@ namespace Mattersight.mock.ba.ae.Tests.ProcessingStreams.RabbitMQ.QueueProducer
                 sut = new QueueProducer<object>(Mock.Of<ILogger<QueueProducer<object>>>(), connection, queueConfiguration, serializer);
             });
 
-            "When give a message to the OnNext method".x(async () =>
+            "When give a message to the Publish method".x(async () =>
             {
-                await sut.OnNext(message);
+                await sut.Publish(message);
             });
 
             "It should use the serializer to serialize the message".x(() =>
