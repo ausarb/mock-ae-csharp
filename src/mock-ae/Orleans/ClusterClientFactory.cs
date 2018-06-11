@@ -41,6 +41,7 @@ namespace Mattersight.mock.ba.ae.Orleans
                             x.ServiceId = _config.OrleansServiceId;
                         })
                         .ConfigureLogging(x => x.AddNLog()) //Just need to have this one line and it will hook into our logging we've already setup eariler.
+                                                            // If you don't see nlog.config changes showing up as expected, make sure the file's build action is to "Copy Always"
                         .AddSimpleMessageStreamProvider(Configuration.OrleansStreamProviderName_SMSProvider)
                         .Build();
                     await orleansClient.Connect();

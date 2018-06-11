@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Mattersight.mock.ba.ae.Serialization;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
@@ -45,15 +46,15 @@ namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ
                 {
                     var message = _deserializer.Deserialize(eventArgs.Body);
                     messageHandler(message);
-                    //_channel.BasicAck(eventArgs.DeliveryTag, multiple: false);
+                    _channel.BasicAck(eventArgs.DeliveryTag, multiple: false);
                 }
                 catch (Exception exception)
                 {
                     _logger.LogWarning(exception, $"Unhandled exception thrown from messageHandler.  Message will be requeued.  QueueName={_config.ExchangeName}.");
-                    //_channel.BasicNack(eventArgs.DeliveryTag, multiple: false, requeue: true);
+                    _channel.BasicNack(eventArgs.DeliveryTag, multiple: false, requeue: true);
                 }
             };
-            _channel.BasicConsume(queue: _queueName, autoAck: true, consumer: consumer);
+            _channel.BasicConsume(queue: _queueName, autoAck: false, consumer: consumer);
         }
 
 

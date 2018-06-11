@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Mattersight.mock.ba.ae.Domain.Personality;
 using Mattersight.mock.ba.ae.Grains.Transcription;
@@ -51,10 +52,12 @@ namespace Mattersight.mock.ba.ae.Grains.Personality
             // This is where we take the transcript and determine a personality for it.  Then write that info to another stream.
             // The "output" stream is an Orleans stream.  Publishing it to Rabbit, or doing anything else with said personality it up to other grains.
             var state = callTranscript.GetState();
-            var transcript = (await state).Transcript;
+            var transcriptGrain = (await state).Transcript;
             var callState = (await (await state).Call.GetState());
 
-            var presonalityType = _personalityTypeDeterminer.DeterminePersonalityTypeFrom(await transcript.GetWords());
+            var words = (await transcriptGrain.GetTranscript()).Utterances.Select(_ => _.Text);
+
+            var presonalityType = _personalityTypeDeterminer.DeterminePersonalityTypeFrom(words);
             _logger.LogDebug($"Call {callState.CtiCallId} was determined to have personality type {presonalityType}.");
             await _personalityTypeAvailable.OnNextAsync(presonalityType.ToString());
         }

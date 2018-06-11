@@ -16,14 +16,14 @@ namespace Mattersight.mock.ba.ae.Domain.Personality
 
     public interface IPersonalityTypeDeterminer
     {
-        PersonalityType DeterminePersonalityTypeFrom(IList<string> words);
+        PersonalityType DeterminePersonalityTypeFrom(IEnumerable<string> words);
     }
 
     public class PersonalityTypeDeterminer : IPersonalityTypeDeterminer
     {
         private static readonly Random Random = new Random();
 
-        public PersonalityType DeterminePersonalityTypeFrom(IList<string> words)
+        public PersonalityType DeterminePersonalityTypeFrom(IEnumerable<string> words)
         {
             var possibleValues = Enum.GetValues(typeof(PersonalityType));
 

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Mattersight.mock.ba.ae.StreamProcessing;
 using Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ;
 using Microsoft.Extensions.Logging;
 using Orleans;
@@ -21,9 +23,9 @@ namespace Mattersight.mock.ba.ae.Grains.Transcription
     public class CallTranscriptPublisherGrain : Grain, ICallTranscriptPublisherGrain
     {
         private readonly ILogger<CallTranscriptPublisherGrain> _logger;
-        private readonly IExchangeProducer<ICallTranscriptGrain> _externalPublisher;
+        private readonly IExchangeProducer<Dictionary<string, object>> _externalPublisher;
 
-        public CallTranscriptPublisherGrain(ILogger<CallTranscriptPublisherGrain> logger, IExchangeProducer<ICallTranscriptGrain> externalPublisher)
+        public CallTranscriptPublisherGrain(ILogger<CallTranscriptPublisherGrain> logger, ICallTranscriptExchange externalPublisher)
         {
             _logger = logger;
             _externalPublisher = externalPublisher;
@@ -44,11 +46,15 @@ namespace Mattersight.mock.ba.ae.Grains.Transcription
         {
             _logger.LogDebug("Publishing a call transcript grain to an external queue.");
             
-            // The stream must know how to serialze the transcript (via dependency injection), not *this* class.  
-
             try
             {
-                await _externalPublisher.OnNext(transcript, "");
+                var state = await transcript.GetState();
+                var payload = new Dictionary<string, object>
+                {
+                    {"callId", (await state.Call.GetState()).CtiCallId},
+                    {"transcript", await state.Transcript.GetTranscript() }
+                };
+                await _externalPublisher.OnNext(payload, "");
                 _logger.LogTrace("Published call transcript grain with identity {ICallTranscriptGrainIdentity}.", transcript.GetGrainIdentity());
             }
             catch (Exception e)

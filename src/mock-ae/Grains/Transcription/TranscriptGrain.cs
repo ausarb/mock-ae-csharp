@@ -1,6 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Mattersight.mock.ba.ae.Domain.Transcription;
+using Mattersight.mock.ba.ae.Repoistories;
 using Orleans;
 using Orleans.Providers;
 
@@ -8,15 +8,14 @@ namespace Mattersight.mock.ba.ae.Grains.Transcription
 {
     public class TranscriptState
     {
-        public IList<string> Words { get; set; }
+        public Transcript Transcript { get; set; }
     }
 
     public interface ITranscriptGrain : IGrainWithGuidKey
     {
-        Task SetWords(IList<string> words);
-        Task<IList<string>> GetWords();
+        Task SetTranscript(Transcript transcript);
+        Task<Transcript> GetTranscript();
     }
-
 
     /// <summary>
     /// Made a grain so it can be stored separately for other things (like a call that it's associated with)
@@ -24,23 +23,28 @@ namespace Mattersight.mock.ba.ae.Grains.Transcription
     [StorageProvider(ProviderName = StorageProviders.CCA)]
     public class TranscriptGrain : Grain<TranscriptState>, ITranscriptGrain
     {
-        protected override Task ReadStateAsync()
+        private readonly ITranscriptRepository _transcriptRepository;
+
+        public TranscriptGrain(ITranscriptRepository transcriptRepository)
         {
-            // Eventually this will use a repository to load from the DB or whereever else the transcript will reside.
-            State.Words = "This is a transcript that has been loaded from the database.  Just kidding.  It's totally fake."
-                .Split(" ",StringSplitOptions.RemoveEmptyEntries);
-            return Task.CompletedTask;
+            _transcriptRepository = transcriptRepository;
         }
 
-        public async Task SetWords(IList<string> words)
+        protected override async Task ReadStateAsync()
         {
-            State.Words = words;
+            State.Transcript = await _transcriptRepository.ForCallId("");
+            await base.ReadStateAsync();
+        }
+
+        public async Task SetTranscript(Transcript transcript)
+        {
+            State.Transcript = transcript;
             await WriteStateAsync();
         }
 
-        public Task<IList<string>> GetWords()
+        public Task<Transcript> GetTranscript()
         {
-            return Task.FromResult(State.Words);
+            return Task.FromResult(State.Transcript);
         }
     }
 }

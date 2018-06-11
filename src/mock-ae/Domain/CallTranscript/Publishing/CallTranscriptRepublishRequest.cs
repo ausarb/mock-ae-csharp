@@ -2,13 +2,13 @@
 {
     public class CallTranscriptRepublishRequest
     {
-        public CallTranscriptRepublishRequest(string callTranscriptGrainKey, string routingKey)
+        public CallTranscriptRepublishRequest(string callId, string routingKey)
         {
-            CallTranscriptGrainKey = callTranscriptGrainKey;
+            CallId = callId;
             RoutingKey = routingKey;
         }
 
-        public string CallTranscriptGrainKey { get; }
+        public string CallId { get; }
         public string RoutingKey { get; }
 
     }

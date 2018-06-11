@@ -18,14 +18,14 @@ namespace Mattersight.mock.ba.ae.StreamProcessing.RabbitMQ
         private readonly ExchangeConfiguration _config;
         private readonly ISerializer<TMessage, byte[]> _serializer;
 
-        public ExchangeProducer(ILogger<ExchangeProducer<TMessage>> logger, IConnection connection, ExchangeConfiguration config, ISerializer<TMessage, byte[]> serializer)
+        public ExchangeProducer(ILogger<ExchangeProducer<TMessage>> logger, IConnection rabbitConnection, ExchangeConfiguration config, ISerializer<TMessage, byte[]> serializer)
         {
             _config = config;
             _serializer = serializer;
 
             // I'm not a fan of doing real work in a constructor, but the benefit outweighs the harm.  
             // This way, the developer doesn't have ot know/remember to call a connect/declare method before using it.
-            _channel = connection.CreateModel();
+            _channel = rabbitConnection.CreateModel();
             _channel.ExchangeDeclare(config.ExchangeName, type: config.ExchangeType, durable: false); //durable is false so this message will be lost if Rabbit goes down and it hasn't been received yet.
 
             logger.LogInformation($"Exchange \"{config.ExchangeName}\" declared as type {config.ExchangeType}.");

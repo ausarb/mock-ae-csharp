@@ -25,7 +25,7 @@ namespace Mattersight.mock.ba.ae.Domain.Transcription
             var json = JsonConvert.SerializeObject(new
             {
                 ctiCallId = (await state.Call.GetState()).CtiCallId,
-                transcript = string.Join(' ', await state.Transcript.GetWords())
+                transcript = string.Join(' ', await state.Transcript.GetTranscript())
             });
 
 //Only in debug builds so we don't leak transcripts to logs.

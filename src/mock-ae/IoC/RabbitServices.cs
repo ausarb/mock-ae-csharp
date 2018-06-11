@@ -13,11 +13,18 @@ namespace Mattersight.mock.ba.ae.IoC
         {
             var connectionFactory = new ConnectionFactory
             {
+                /*
                 HostName = Environment.GetEnvironmentVariable("RABBIT_HOST_NAME") ?? "127.0.0.1",
                 Port = int.Parse(Environment.GetEnvironmentVariable("RABBIT_HOST_PORT") ?? AmqpTcpEndpoint.UseDefaultPort.ToString()),
                 UserName = Environment.GetEnvironmentVariable("RABBIT_USER_NAME") ?? "guest",
                 Password = Environment.GetEnvironmentVariable("RABBIT_PASSWORD") ?? "guest",
                 VirtualHost = Environment.GetEnvironmentVariable("RABBIT_VIRTUAL_HOST") ?? "/"
+                              */
+                HostName = "127.0.0.1",
+                Port = AmqpTcpEndpoint.UseDefaultPort,
+                UserName ="guest",
+                Password = "guest",
+                VirtualHost = "/"
             };
 
             // This can be removed once the legace Stream Producer/Consumers are removed.

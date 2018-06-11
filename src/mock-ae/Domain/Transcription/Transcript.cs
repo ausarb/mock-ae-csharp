@@ -5,11 +5,13 @@ namespace Mattersight.mock.ba.ae.Domain.Transcription
 {
     public class Transcript
     {
-        public Transcript(string words)
+        public Transcript(ActorRole actorRole, IEnumerable<Utterance> utterances)
         {
-            Words = words.Split(" ").ToImmutableList();
+            ActorRole = actorRole;
+            Utterances = ImmutableArray.CreateRange(utterances);
         }
 
-        public IReadOnlyList<string> Words { get; }
+        public ActorRole ActorRole { get; }
+        public ImmutableArray<Utterance> Utterances { get; }
     }
 }

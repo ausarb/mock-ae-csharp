@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Mattersight.mock.ba.ae.Domain;
 using Mattersight.mock.ba.ae.Domain.CTI;
+using Mattersight.mock.ba.ae.Domain.Transcription;
 using Mattersight.mock.ba.ae.Grains.Transcription;
 using Mattersight.mock.ba.ae.Serialization;
 using Microsoft.Extensions.Logging;
@@ -73,12 +75,18 @@ namespace Mattersight.mock.ba.ae.Grains.Calls
 
             var callTranscriptGrain = GrainFactory.GetGrain<ICallTranscriptGrain>(acdCallId);
             var transcript = GrainFactory.GetGrain<ITranscriptGrain>(Guid.NewGuid());
-            await transcript.SetWords("blah blah blah".Split(" ").ToList());
+            await transcript.SetTranscript(MakeSillyTranscript("Blah blah blah"));
             await callTranscriptGrain.SetState(call, transcript);
 
             _logger.LogInformation($"acdCallId {acdCallId}: About to publish transcript to internal stream.");
             await _callTranscriptAvailableStream.OnNextAsync(callTranscriptGrain);
             _logger.LogTrace($"acdCallId {acdCallId}: Published.");
+        }
+
+        private static Transcript MakeSillyTranscript(string text)
+        {
+            var words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(_ => new Utterance(_, TimeSpan.Zero, TimeSpan.Zero, 0.5f));
+            return new Transcript(ActorRole.Agent, words);
         }
 
         public Task OnCompletedAsync()
